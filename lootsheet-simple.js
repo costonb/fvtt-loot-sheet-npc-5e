@@ -1483,18 +1483,17 @@ Hooks.once("init", () => {
         item: newItem,
         quantity: quantity,
       });
-      /* let destItem = destination.data.items.find(i => i.name == newItem.name);
-			// console.log("DESTITEM: \n"); 
-			// console.log(destItem); */
-      additions.push(newItem);
-      /* if (destItem === undefined) {
-                additions.push(newItem);
-            } else {
-                // console.log("Existing Item");
-				newItem.data.quantity = Number(destitem.system.quantity) + Number(newItem.data.quantity);
-				additions.push(newItem);
-				
-            } */
+      let destItem = destination.data.items.find(i => i.name == newItem.name);
+      // console.log("DESTITEM: \n"); 
+      // console.log(destItem); */
+      if (destItem === undefined) {
+        additions.push(newItem);
+      } else {
+        // console.log("Existing Item");
+        newItem.data.quantity = Number(destitem.system.quantity) + Number(newItem.data.quantity);
+        additions.push(newItem);
+
+      }
     }
 
     if (deletes.length > 0) {
