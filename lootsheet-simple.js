@@ -117,7 +117,7 @@ class LootSheet5eNPC extends dnd5e.applications.actor.ActorSheet5eNPC {
     const options = super.defaultOptions;
 
     mergeObject(options, {
-      classes: ["dnd5e sheet actor npc npc-sheet loot-sheet-npc"],
+      classes: ["dnd5e", "sheet", "actor", "npc", "npc-sheet", "loot-sheet-npc"],
       width: 890,
       height: 750,
     });
