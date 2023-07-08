@@ -20,7 +20,7 @@
   "socket": true,
   "url": "https://github.com/costonb/fvtt-loot-sheet-npc-5e",
   "manifest": "https://raw.githubusercontent.com/costonb/fvtt-loot-sheet-npc-5e/v11/module.json",
-  "download": "https://github.com/costonb/fvtt-loot-sheet-npc-5e/archive/lootsheet-simple.zip",
+  "download": "https://github.com/costonb/fvtt-loot-sheet-npc-5e/archive/v11.zip",
   "id": "lootsheet-simple",
   "authors": [
     {
