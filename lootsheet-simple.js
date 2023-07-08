@@ -1490,7 +1490,7 @@ Hooks.once("init", () => {
         additions.push(newItem);
       } else {
         // console.log("Existing Item");
-        newItem.data.quantity = Number(destitem.system.quantity) + Number(newItem.data.quantity);
+        newItem.data.quantity = Number(destItem.system.quantity) + Number(newItem.data.quantity);
         additions.push(newItem);
 
       }
