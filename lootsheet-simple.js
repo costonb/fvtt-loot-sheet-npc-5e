@@ -1483,15 +1483,16 @@ Hooks.once("init", () => {
         item: newItem,
         quantity: quantity,
       });
-      let destItem = destination.data.items.find(i => i.name == newItem.name);
+      let destItem = destination.items.find(i => i.name == newItem.name);
       // console.log("DESTITEM: \n"); 
       // console.log(destItem); */
       if (destItem === undefined) {
         additions.push(newItem);
       } else {
         // console.log("Existing Item");
-        newItem.system.quantity = Number(destItem.system.quantity) + Number(newItem.system.quantity);
-        destUpdates.push(newItem);
+        let updateItem = duplicate(destItem);
+        updateItem.system.quantity = Number(destItem.system.quantity) + Number(newItem.system.quantity);
+        destUpdates.push(updateItem);
       }
     }
 
