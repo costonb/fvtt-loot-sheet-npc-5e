@@ -5,7 +5,7 @@
     "exportSource": {
       "world": "olakino",
       "system": "dnd5e",
-      "coreVersion": "0.6.1",
+      "coreVersion": "2.2.2",
       "systemVersion": 0.92
     }
   },
