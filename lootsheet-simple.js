@@ -1491,7 +1491,7 @@ Hooks.once("init", () => {
       } else {
         // console.log("Existing Item");
         newItem.system.quantity = Number(destItem.system.quantity) + Number(newItem.system.quantity);
-        updates.push(newItem);
+        destUpdates.push(newItem);
       }
     }
 
