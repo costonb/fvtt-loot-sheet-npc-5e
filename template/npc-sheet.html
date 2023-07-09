@@ -120,7 +120,7 @@
 
             <h3 class="gm-section">{{ localize "DND5E.Biography" }}</h3>
             <div class="sidebar-bio" data-group="sidebar" data-tab="sidebar-bio">
-                {{editor content=system.details.biography.value target="system.details.biography.value" button=true owner=owner editable=editable rollData=rollData}}
+                {{editor enrichedBio target="system.details.biography.value" button=true owner=owner editable=editable rollData=rollData}}
             </div>
 
             {{/if}}
@@ -138,7 +138,7 @@
 
             <section class="sheet-body">
                 <div class="tab" data-tab="biography" data-group="primary">
-                    {{editor content=system.details.biography.value target="system.details.biography.value" button=true owner=owner editable=editable}}
+                    {{editor enrichedBio target="system.details.biography.value" button=true owner=owner editable=editable}}
                 </div>
     
                 <div class="tab" data-tab="inventory" data-group="primary">

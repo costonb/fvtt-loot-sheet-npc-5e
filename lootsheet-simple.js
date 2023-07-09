@@ -134,6 +134,9 @@ class LootSheet5eNPC extends dnd5e.applications.actor.ActorSheet5eNPC {
     if (game.user.isGM) sheetData.isGM = true;
     else sheetData.isGM = false;
 
+    let bio = await TextEditor.enrichHTML(this.actor.system.details.biography.value, {async: true});
+    sheetData.enrichedBio = bio;
+
     let lootsheettype = await this.actor.getFlag(
       "lootsheet-simple",
       "lootsheettype"
@@ -980,7 +983,7 @@ class LootSheet5eNPC extends dnd5e.applications.actor.ActorSheet5eNPC {
 
   _hackydistributeCoins(containerActor) {
     //This is identical as the distributeCoins function defined in the init hook which for some reason can't be called from the above _distributeCoins method of the lootsheet-simple class. I couldn't be bothered to figure out why a socket can't be called as the GM... so this is a hack but it works.
-    let actorData = containerActor.data;
+    let actorData = containerActor;
     let observers = [];
     let players = game.users.players;
 
@@ -991,8 +994,8 @@ class LootSheet5eNPC extends dnd5e.applications.actor.ActorSheet5eNPC {
         player
       );
       if (player != "default" && playerPermission >= 2) {
-        let actor = game.actors.get(player.data.character);
-        if (actor != null && (player.data.role === 1 || player.data.role === 2))
+        let actor = game.actors.get(player.character);
+        if (actor != null && (player.role === 1 || player.role === 2))
           observers.push(actor);
       }
     }
@@ -1001,7 +1004,7 @@ class LootSheet5eNPC extends dnd5e.applications.actor.ActorSheet5eNPC {
 
     // Calculate split of currency
     let currencySplit = duplicate(
-      LootSheet5eNPCHelper.convertCurrencyFromObject(actorData.data.currency)
+      LootSheet5eNPCHelper.convertCurrencyFromObject(actorData.currency)
     );
 
     // keep track of the remainder
@@ -1023,10 +1026,10 @@ class LootSheet5eNPC extends dnd5e.applications.actor.ActorSheet5eNPC {
 
       msg = [];
       let currency = LootSheet5eNPCHelper.convertCurrencyFromObject(
-          u.data.data.currency
+          u.data.currency
         ),
         newCurrency = duplicate(
-          LootSheet5eNPCHelper.convertCurrencyFromObject(u.data.data.currency)
+          LootSheet5eNPCHelper.convertCurrencyFromObject(u.currency)
         );
 
       for (let c in currency) {
@@ -1062,7 +1065,7 @@ class LootSheet5eNPC extends dnd5e.applications.actor.ActorSheet5eNPC {
 
       // Create chat message for coins received
       if (msg.length != 0) {
-        let message = `${u.data.name} receives: `;
+        let message = `${u.name} receives: `;
         message += msg.join(",");
         ChatMessage.create({
           user: game.user._id,
