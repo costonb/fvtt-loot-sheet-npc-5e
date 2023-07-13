@@ -7,8 +7,8 @@ class LootSheet5eNPCHelper {
    */
   static getLootPermissionForPlayer(actorData, player) {
     let defaultPermission = actorData.ownership.default;
-    if (player.id in actorData.ownership) {
-      return actorData.ownership[player.id];
+    if (player.playerId in actorData.ownership) {
+      return actorData.ownership[player.playerId];
     } else if (typeof defaultPermission !== "undefined") {
       return defaultPermission;
     } else {
@@ -109,7 +109,7 @@ class LootSheet5eNPC extends dnd5e.applications.actor.ActorSheet5eNPC {
 
     const path = "systems/dnd5e/templates/actors/";
     if (!game.user.isGM && this.actor.limited)
-      return path + "limited-sheet.html";
+      return path + "limited-sheet.hbs";
     return "modules/lootsheet-simple/template/npc-sheet.html";
   }
 
@@ -133,9 +133,6 @@ class LootSheet5eNPC extends dnd5e.applications.actor.ActorSheet5eNPC {
     // Prepare isGM attribute in sheet Data
     if (game.user.isGM) sheetData.isGM = true;
     else sheetData.isGM = false;
-
-    let bio = await TextEditor.enrichHTML(this.actor.system.details.biography.value, { async: true });
-    sheetData.enrichedBio = bio;
 
     let lootsheettype = await this.actor.getFlag(
       "lootsheet-simple",
@@ -267,6 +264,9 @@ class LootSheet5eNPC extends dnd5e.applications.actor.ActorSheet5eNPC {
     sheetData.system.currency = LootSheet5eNPCHelper.convertCurrencyFromObject(
       sheetData.system.currency
     );
+
+    // console.log("sheetdata", sheetData);
+    // console.log("this actor", this.actor);
 
     // Return data for rendering
     return sheetData;
@@ -1004,7 +1004,7 @@ class LootSheet5eNPC extends dnd5e.applications.actor.ActorSheet5eNPC {
 
     // Calculate split of currency
     let currencySplit = duplicate(
-      LootSheet5eNPCHelper.convertCurrencyFromObject(actorData.system.currency)
+      LootSheet5eNPCHelper.convertCurrencyFromObject(containerActor.system.currency)
     );
 
     // keep track of the remainder
@@ -1026,8 +1026,8 @@ class LootSheet5eNPC extends dnd5e.applications.actor.ActorSheet5eNPC {
 
       msg = [];
       let currency = LootSheet5eNPCHelper.convertCurrencyFromObject(
-        u.system.currency
-      ),
+          u.system.currency
+        ),
         newCurrency = duplicate(
           LootSheet5eNPCHelper.convertCurrencyFromObject(u.system.currency)
         );
@@ -1074,21 +1074,19 @@ class LootSheet5eNPC extends dnd5e.applications.actor.ActorSheet5eNPC {
   _onCyclePermissionProficiency(event) {
     event.preventDefault();
 
-    let actorData = this.actor.data;
-
     let field = $(event.currentTarget).siblings('input[type="hidden"]');
 
     let level = parseFloat(field.val());
     if (typeof level === undefined) level = 0;
 
-    const levels = [0, 3, 2]; //const levels = [0, 2, 3];
+    const levels = [0, 2, 3]; //const levels = [0, 2, 3];
 
     let idx = levels.indexOf(level),
       newLevel = levels[idx === levels.length - 1 ? 0 : idx + 1];
 
     let playerId = field[0].name;
 
-    this._updatePermissions(actorData, playerId, newLevel, event);
+    this._updatePermissions(this.actor, playerId, newLevel, event);
 
     this._onSubmit(event);
   }
@@ -1123,7 +1121,7 @@ class LootSheet5eNPC extends dnd5e.applications.actor.ActorSheet5eNPC {
         currentPermissions[u._id] = newLevel;
       }
     }
-    const lootPermissions = new PermissionControl(this.actor);
+    const lootPermissions = new DocumentOwnershipConfig(this.actor);
     lootPermissions._updateObject(event, currentPermissions);
 
     this._onSubmit(event);
@@ -1131,10 +1129,10 @@ class LootSheet5eNPC extends dnd5e.applications.actor.ActorSheet5eNPC {
 
   _updatePermissions(actorData, playerId, newLevel, event) {
     // Read player permission on this actor and adjust to new level
-    let currentPermissions = duplicate(actorData.permission);
+    let currentPermissions = duplicate(actorData.ownership);
     currentPermissions[playerId] = newLevel;
     // Save updated player permissions
-    const lootPermissions = new PermissionControl(this.actor);
+    const lootPermissions = new DocumentOwnershipConfig(this.actor);
     lootPermissions._updateObject(event, currentPermissions);
   }
 
@@ -1227,8 +1225,8 @@ class LootSheet5eNPC extends dnd5e.applications.actor.ActorSheet5eNPC {
   _getPermissionDescription(level) {
     const description = {
       0: "None (cannot access sheet)",
-      2: "Observer (access to sheet but can only purchase items if merchant sheet type)",
-      3: "Owner (can access items and share coins)",
+      2: "Observer (access to sheet but can only loot or purchase items)",
+      3: "Owner (full access)",
       999: "Change all permissions",
     };
     return description[level];
@@ -1241,69 +1239,41 @@ class LootSheet5eNPC extends dnd5e.applications.actor.ActorSheet5eNPC {
    * @private
    */
   _prepareGMSettings(context) {
-    // const playerData = [],
-    //   observers = [];
+    const playerData = [], observers = [];
+    //console.log(game.users);
+    //console.log("context", context);
 
-    // let players = game.users.players;
-    // let commonPlayersPermission = -1;
+    let players = game.users;
 
-    // for (let player of players) {
-    //   // get the name of the primary actor for a player
-    //   const actor = game.actors.get(player.data.character);
+    for (let player of players) {
 
-    //   if (actor) {
-    //     player.actor = actor.data.name;
-    //     player.actorId = actor.data._id;
-    //     player.playerId = player.data._id;
+      //console.log(player);
 
-    //     player.lootPermission = LootSheet5eNPCHelper.getLootPermissionForPlayer(
-    //       context,
-    //       player
-    //     );
+        if (player.character) {
+        player.playerId = player._id;
+        //player.name = player.name;
+        player.actor = player.character.name;
 
-    //     if (player.lootPermission >= 2 && !observers.includes(actor.data._id)) {
-    //       observers.push(actor.data._id);
-    //     }
+        player.lootPermission = LootSheet5eNPCHelper.getLootPermissionForPlayer(
+          context,
+          player
+        );
 
-    //     //Set icons and permission texts for html
-    //     if (commonPlayersPermission < 0) {
-    //       commonPlayersPermission = player.lootPermission;
-    //     } else if (commonPlayersPermission !== player.lootPermission) {
-    //       commonPlayersPermission = 999;
-    //     }
+        //console.log("player", player);
 
-    //     player.icon = this._getPermissionIcon(player.lootPermission);
-    //     player.lootPermissionDescription = this._getPermissionDescription(
-    //       player.lootPermission
-    //     );
-    //     playerData.push(player);
-    //   }
-    // }
+        player.icon = this._getPermissionIcon(player.lootPermission);
+        player.lootPermissionDescription = this._getPermissionDescription(
+          player.lootPermission
+        );
+        playerData.push(player);
 
-    // // calculate the split of coins between all observers of the sheet.
-    // // console.log(context);
-    // let currencySplit = duplicate(
-    //   LootSheet5eNPCHelper.convertCurrencyFromObject(context.system.currency)
-    // );
-    // for (let c in currencySplit) {
-    //   if (observers.length)
-    //     if (currencySplit[c] != null)
-    //       currencySplit[c] = Math.floor(currencySplit[c] / observers.length);
-    //     else currencySplit[c] = 0;
-    // }
+      }
 
-    // let loot = {};
-    // loot.players = playerData;
-    // loot.observerCount = observers.length;
-    // loot.currency = currencySplit;
-    // loot.playersPermission = commonPlayersPermission;
-    // loot.playersPermissionIcon = this._getPermissionIcon(
-    //   commonPlayersPermission
-    // );
-    // loot.playersPermissionDescription = this._getPermissionDescription(
-    //   commonPlayersPermission
-    // );
-    // context.flags.loot = loot;
+    }
+
+    let loot = {};
+    loot.players = playerData;
+    context.flags.loot = loot;
   }
 }
 
@@ -1473,7 +1443,7 @@ Hooks.once("init", () => {
         quantity: quantity,
       });
       let destItem = destination.items.find(i => i.name == newItem.name);
-      // console.log("DESTITEM: \n"); 
+      // console.log("DESTITEM: \n");
       // console.log(destItem); */
       if (destItem === undefined) {
         additions.push(newItem);
@@ -1729,7 +1699,7 @@ Hooks.once("init", () => {
 
     // Calculate split of currency
     let currencySplit = duplicate(
-      LootSheet5eNPCHelper.convertCurrencyFromObject(actorData.system.currency)
+      LootSheet5eNPCHelper.convertCurrencyFromObject(containerActor.system.currency)
     );
 
     // keep track of the remainder
@@ -1751,8 +1721,8 @@ Hooks.once("init", () => {
 
       msg = [];
       let currency = LootSheet5eNPCHelper.convertCurrencyFromObject(
-        u.system.currency
-      ),
+          u.system.currency
+        ),
         newCurrency = duplicate(
           LootSheet5eNPCHelper.convertCurrencyFromObject(u.system.currency)
         );
@@ -1791,17 +1761,16 @@ Hooks.once("init", () => {
   }
 
   function lootCoins(containerActor, looter) {
-    let actorData = containerActor.data;
 
     let sheetCurrency = LootSheet5eNPCHelper.convertCurrencyFromObject(
-      actorData.system.currency
+      containerActor.system.currency
     );
 
     // add currency to actors existing coins
     let msg = [];
     let currency = LootSheet5eNPCHelper.convertCurrencyFromObject(
-      looter.system.currency
-    ),
+        looter.system.currency
+      ),
       newCurrency = duplicate(
         LootSheet5eNPCHelper.convertCurrencyFromObject(
           looter.system.currency
