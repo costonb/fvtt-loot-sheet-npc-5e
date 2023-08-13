@@ -440,7 +440,7 @@ class LootSheet5eNPC extends dnd5e.applications.actor.ActorSheet5eNPC {
       const rollResult = await rolltable.roll();
       let newItem = null;
 
-      if (rollResult.results[0].data.collection === "Item") {
+      if (rollResult.results[0].documentCollection === "Item") {
         newItem = game.items.get(rollResult.results[0].documentId);
       } else {
         // Try to find it in the compendium
@@ -462,7 +462,7 @@ class LootSheet5eNPC extends dnd5e.applications.actor.ActorSheet5eNPC {
       // console.log`Loot Sheet | Adding ${itemQtyRoll.result} x ${newItem.name}`);
 
       let existingItem = this.actor.items.find(
-        (item) => item.data.name == newItem.name
+        (item) => item.name == newItem.name
       );
 
       if (existingItem === undefined) {
@@ -1026,8 +1026,8 @@ class LootSheet5eNPC extends dnd5e.applications.actor.ActorSheet5eNPC {
 
       msg = [];
       let currency = LootSheet5eNPCHelper.convertCurrencyFromObject(
-          u.system.currency
-        ),
+        u.system.currency
+      ),
         newCurrency = duplicate(
           LootSheet5eNPCHelper.convertCurrencyFromObject(u.system.currency)
         );
@@ -1049,6 +1049,24 @@ class LootSheet5eNPC extends dnd5e.applications.actor.ActorSheet5eNPC {
     containerActor.update({
       "system.currency": currencyRemainder,
     });
+
+
+    // Remove currency from loot actor.
+    let lootCurrency = LootSheet5eNPCHelper.convertCurrencyFromObject(
+      containerActor.system.currency
+    ),
+      zeroCurrency = {};
+
+    for (let c in lootCurrency) {
+      zeroCurrency[c] = {
+        type: currencySplit[c].type,
+        label: currencySplit[c].type,
+        value: currencyRemainder[c],
+      };
+      containerActor.update({
+        "data.currency": zeroCurrency,
+      });
+    }
 
     // Create chat message for coins received
     if (msg.length != 0) {
@@ -1130,6 +1148,7 @@ class LootSheet5eNPC extends dnd5e.applications.actor.ActorSheet5eNPC {
   _updatePermissions(actorData, playerId, newLevel, event) {
     // Read player permission on this actor and adjust to new level
     let currentPermissions = duplicate(actorData.ownership);
+    console.log(currentPermissions);
     currentPermissions[playerId] = newLevel;
     // Save updated player permissions
     const lootPermissions = new DocumentOwnershipConfig(this.actor);
@@ -1249,7 +1268,7 @@ class LootSheet5eNPC extends dnd5e.applications.actor.ActorSheet5eNPC {
 
       //console.log(player);
 
-        if (player.character) {
+      if (player.character) {
         player.playerId = player._id;
         //player.name = player.name;
         player.actor = player.character.name;
@@ -1721,8 +1740,8 @@ Hooks.once("init", () => {
 
       msg = [];
       let currency = LootSheet5eNPCHelper.convertCurrencyFromObject(
-          u.system.currency
-        ),
+        u.system.currency
+      ),
         newCurrency = duplicate(
           LootSheet5eNPCHelper.convertCurrencyFromObject(u.system.currency)
         );
@@ -1745,9 +1764,20 @@ Hooks.once("init", () => {
       "system.currency": currencyRemainder
     });
 
+    for (let c in lootCurrency) {
+      zeroCurrency[c] = {
+        type: currencySplit[c].type,
+        label: currencySplit[c].type,
+        value: currencyRemainder[c],
+      };
+      containerActor.update({
+        "data.currency": zeroCurrency,
+      });
+    }
+
     // Create chat message for coins received
     if (msg.length != 0) {
-      let message = `${u.data.name} receives: `;
+      let message = `${u.name} receives: `;
       message += msg.join(",");
       ChatMessage.create({
         user: game.user._id,
@@ -1759,6 +1789,7 @@ Hooks.once("init", () => {
       });
     }
   }
+}
 
   function lootCoins(containerActor, looter) {
 
@@ -1769,8 +1800,8 @@ Hooks.once("init", () => {
     // add currency to actors existing coins
     let msg = [];
     let currency = LootSheet5eNPCHelper.convertCurrencyFromObject(
-        looter.system.currency
-      ),
+      looter.system.currency
+    ),
       newCurrency = duplicate(
         LootSheet5eNPCHelper.convertCurrencyFromObject(
           looter.system.currency
@@ -1807,7 +1838,7 @@ Hooks.once("init", () => {
     // console.log("zeroCurrency", zeroCurrency);
     // Create chat message for coins received
     if (msg.length != 0) {
-      let message = `${looter.data.name} receives: `;
+      let message = `${looter.name} receives: `;
       message += msg.join(",");
       ChatMessage.create({
         user: game.user._id,
