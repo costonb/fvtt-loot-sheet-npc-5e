@@ -1050,24 +1050,6 @@ class LootSheet5eNPC extends dnd5e.applications.actor.ActorSheet5eNPC {
       "system.currency": currencyRemainder,
     });
 
-
-    // Remove currency from loot actor.
-    let lootCurrency = LootSheet5eNPCHelper.convertCurrencyFromObject(
-      containerActor.system.currency
-    ),
-      zeroCurrency = {};
-
-    for (let c in lootCurrency) {
-      zeroCurrency[c] = {
-        type: currencySplit[c].type,
-        label: currencySplit[c].type,
-        value: currencyRemainder[c],
-      };
-      containerActor.update({
-        "data.currency": zeroCurrency,
-      });
-    }
-
     // Create chat message for coins received
     if (msg.length != 0) {
       let message = `${u.name} receives: `;
@@ -1763,17 +1745,6 @@ Hooks.once("init", () => {
     containerActor.update({
       "system.currency": currencyRemainder
     });
-
-    for (let c in lootCurrency) {
-      zeroCurrency[c] = {
-        type: currencySplit[c].type,
-        label: currencySplit[c].type,
-        value: currencyRemainder[c],
-      };
-      containerActor.update({
-        "data.currency": zeroCurrency,
-      });
-    }
 
     // Create chat message for coins received
     if (msg.length != 0) {
