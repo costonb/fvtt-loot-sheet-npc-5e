@@ -16,7 +16,7 @@
         "compatibility": {
           "minimum": "2.2.2",
           "verified": "2.3.2",
-          "maximum": "2.3.0"
+          "maximum": "2.3.1"
         }
       }
     ]
@@ -34,7 +34,7 @@
   ],
   "compatibility": {
     "minimum": "10",
-    "verified": "11.305",
+    "verified": "11.308",
     "maximum": "11"
   }
 }

@@ -430,7 +430,7 @@ class LootSheet5eNPC extends dnd5e.applications.actor.ActorSheet5eNPC {
     }
 
     if (clearInventory) {
-      let currentItems = this.actor.data.items.map((i) => i.id);
+      let currentItems = this.actor.items.map((i) => i.id);
       await this.actor.deleteEmbeddedDocuments("Item", currentItems);
     }
 
@@ -1117,7 +1117,7 @@ class LootSheet5eNPC extends dnd5e.applications.actor.ActorSheet5eNPC {
 
     let currentPermissions = duplicate(actorData.permission);
     for (let u of users) {
-      if (u.data.role === 1 || u.data.role === 2) {
+      if (u.role === 1 || u.role === 2) {
         currentPermissions[u._id] = newLevel;
       }
     }
@@ -1679,7 +1679,7 @@ Hooks.once("init", () => {
   }
 
   function distributeCoins(containerActor) {
-    let actorData = containerActor.data;
+    let actorData = containerActor;
     let observers = [];
     let players = game.users.players;
 
@@ -1691,7 +1691,7 @@ Hooks.once("init", () => {
       );
       if (player != "default" && playerPermission >= 2) {
         let actor = player.character;
-        if (actor != null && (player.data.role === 1 || player.data.role === 2))
+        if (actor != null && (player.role === 1 || player.role === 2))
           observers.push(actor);
       }
     }
@@ -1741,26 +1741,25 @@ Hooks.once("init", () => {
       u.update({
         "system.currency": newCurrency
       });
-    }
-    containerActor.update({
-      "system.currency": currencyRemainder
-    });
-
-    // Create chat message for coins received
-    if (msg.length != 0) {
-      let message = `${u.name} receives: `;
-      message += msg.join(",");
-      ChatMessage.create({
-        user: game.user._id,
-        speaker: {
-          actor: containerActor,
-          alias: containerActor.name,
-        },
-        content: message,
+      containerActor.update({
+        "system.currency": currencyRemainder
       });
+
+      // Create chat message for coins received
+      if (msg.length != 0) {
+        let message = `${u.name} receives: `;
+        message += msg.join(",");
+        ChatMessage.create({
+          user: game.user._id,
+          speaker: {
+            actor: containerActor,
+            alias: containerActor.name,
+          },
+          content: message,
+        });
+      }
     }
   }
-}
 
   function lootCoins(containerActor, looter) {
 
