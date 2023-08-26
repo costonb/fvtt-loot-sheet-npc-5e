@@ -1266,6 +1266,9 @@ class LootSheet5eNPC extends dnd5e.applications.actor.ActorSheet5eNPC {
         type: "loot",
       },
     };
+    if(!actorData || !actorData.items) {
+      return features;
+    }
 
     // Iterate through items, allocating to containers
     let items = [...actorData.items];
