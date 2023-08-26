@@ -132,6 +132,10 @@
         <section class="sheet-content content">
             <nav class="sheet-navigation tabs" data-group="primary">
                 <a class="item active" data-tab="inventory">Inventory</a>
+                
+                {{#ifeq lootsheettype "Merchant"}}
+                    <a class="item" data-tab="sell">Sell</a>
+                {{/ifeq}}
                 {{#if isGM}}
                     <a class="item" data-tab="biography">Biography</a>
                 {{/if}}
@@ -228,6 +232,72 @@
                                                 <a class="item-control item-edit" title="Edit Item"><i class="fas fa-edit"></i></a>
                                                 <a class="item-control item-delete" title="Delete Item"><i class="fas fa-trash"></i></a>
                                             {{/if}}
+                                        </div>
+                                    </li>
+
+                                {{/each}}
+                            </ol>
+                            {{/each}}
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="tab" data-tab="sell" data-group="primary">
+                    <div class="features" data-group="primary" data-tab="features">
+                        <div class="inventory-filters">
+                            <ol class="currency flexrow">
+                                <span style="flex: 0 0 60px;"><h3>
+                                    Currency
+                                </h3></span>
+                                {{#each system.currency as |c i|}}
+                                <span>
+                                    <label class="denomination {{i}}">{{i}}</label>
+                                    <label>{{c}}</label>
+                                </span>
+                                {{/each}}
+                            </ol>
+                        </div>
+
+                        <div class="header-details flexrow">
+                            <ul class="items-list inventory-list">
+                            {{#each playerItems as |section sid|}}
+                                {{#if section.items}}
+                                    <li class="items-header flexrow inventory-header">
+                                        <h3 class="item-name">{{section.label}}</h3>
+                                        {{#if ../owner}}
+                                            <div class="item-controls">
+                                                <a class="item-control item-create" title="Create Item" data-type="{{section.type}}">
+                                                    <i class="fas fa-plus"></i> Add
+                                                </a>
+                                            </div>
+                                        {{/if}}
+                                    </li>
+                                    <ol class="item-list">
+                                {{/if}}
+
+                                {{#each section.items as |item iid|}}
+
+                                    <li class="item flexrow" data-item-id="{{item._id}}">
+                                        <div class="item-name flexrow rollable">
+                                            <div class="item-image" style="background-image: url({{item.img}})"></div>
+                                            <h4>
+                                                {{item.name}}
+                                            </h4>
+                                        </div>
+                                        <div class="item-quantity">
+                                            <i class="fas fa-box" title="Quantity"></i> {{item.system.quantity}}
+                                        </div>
+                                        <div class="item-weight">
+                                            <i class="fas fa-weight-hanging" title="Weight"></i> {{lootsheetweight item.system.weight}}{{lootsheetstackweight item.system.weight item.system.quantity}}
+                                        </div>
+                                        <div class="item-price">
+                                            <span class="item-price-label"><i class="fas fa-coins" title="Price (in gp)"></i> {{ lootsheetprice item.system.price.value ../../priceModifier }} </span><label class="denomination {{ item.system.price.denomination }}">&nbsp;</label>
+                                        </div>
+
+                                        <div class="item-controls">
+                                            <a class="item-control item-sellall" title="Sell Stack"><i class="fas fa-coins"></i></a>
+                                            <a class="item-control item-sell" title="Sell Item"><i class="fas fa-dollar-sign"></i></a>
                                         </div>
                                     </li>
 

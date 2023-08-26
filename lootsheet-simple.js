@@ -312,6 +312,10 @@ class LootSheet5eNPC extends dnd5e.applications.actor.ActorSheet5eNPC {
     html.find(".item-buy").click((ev) => this._buyItem(ev));
     html.find(".item-buyall").click((ev) => this._buyItem(ev, 1));
 
+    // Sell Item
+    html.find(".item-sell").click((ev) => this._sellItem(ev));
+    html.find(".item-sellall").click((ev) => this._sellItem(ev, 1));
+
     // Loot Item
     html.find(".item-loot").click((ev) => this._lootItem(ev));
     html.find(".item-lootall").click((ev) => this._lootItem(ev, 1));
@@ -675,6 +679,85 @@ class LootSheet5eNPC extends dnd5e.applications.actor.ActorSheet5eNPC {
       },
       {
         acceptLabel: "Purchase",
+      }
+    );
+    d.render(true);
+  }
+
+  /* -------------------------------------------- */
+
+  /**
+   * Handle sell item
+   * @private
+   */
+  _sellItem(event, all = 0) {
+    event.preventDefault();
+    // console.log("Loot Sheet | Buy Item clicked");
+
+    let targetGm = null;
+    game.users.forEach((u) => {
+      if (u.isGM && u.active && u.viewedScene === game.user.viewedScene) {
+        targetGm = u;
+      }
+    });
+
+    if (!targetGm) {
+      return ui.notifications.error(
+        "No active GM on your scene, they must be online and on the same scene to sell an item."
+      );
+    }
+
+    if (this.token === null) {
+      return ui.notifications.error(`You must sell items to a token.`);
+    }
+    // console.log(game.user.character);
+    if (!game.user.character) {
+      // console.log("Loot Sheet | No active character for user");
+      return ui.notifications.error(`No active character for user.`);
+    }
+
+    const itemId = $(event.currentTarget).parents(".item").attr("data-item-id");
+    const targetItem = game.user.character.getEmbeddedDocument("Item", itemId);
+
+    const item = {
+      itemId: itemId,
+      quantity: 1,
+    };
+    if (all || event.shiftKey) {
+      item.quantity = targetItem.system.quantity;
+    }
+
+    const packet = {
+      type: "sell",
+      sellerId: game.user.character._id,
+      tokenId: this.token.id,
+      itemId: itemId,
+      quantity: 1,
+      processorId: targetGm.id,
+    };
+
+    if (targetItem.system.quantity === item.quantity) {
+      console.log(
+        "LootSheet5e",
+        "Sending sell request to " + targetGm.name,
+        packet
+      );
+      game.socket.emit(LootSheet5eNPC.SOCKET, packet);
+      return;
+    }
+
+    const d = new QuantityDialog(
+      (quantity) => {
+        packet.quantity = quantity;
+        console.log(
+          "LootSheet5e",
+          "Sending sell request to " + targetGm.name,
+          packet
+        );
+        game.socket.emit(LootSheet5eNPC.SOCKET, packet);
+      },
+      {
+        acceptLabel: "Sell",
       }
     );
     d.render(true);
@@ -1144,6 +1227,12 @@ class LootSheet5eNPC extends dnd5e.applications.actor.ActorSheet5eNPC {
    * @private
    */
   _prepareItems(actorData) {
+    // Assign and return
+    actorData.playerItems = this._formatItems(game.user.character)
+    actorData.actor.features = this._formatItems(actorData);
+  }
+
+  _formatItems(actorData) {
     // Actions
     const features = {
       weapons: {
@@ -1179,8 +1268,8 @@ class LootSheet5eNPC extends dnd5e.applications.actor.ActorSheet5eNPC {
     };
 
     // Iterate through items, allocating to containers
-    let items = actorData.items;
-    if (items) {
+    let items = [...actorData.items];
+    if (items && items.length > 0) {
       items = items.sort(function (a, b) {
         return a.name.localeCompare(b.name);
       });
@@ -1196,9 +1285,7 @@ class LootSheet5eNPC extends dnd5e.applications.actor.ActorSheet5eNPC {
         //else features.loot.items.push(i);
       }
     }
-
-    // Assign and return
-    actorData.actor.features = features;
+    return features;
   }
 
   /* -------------------------------------------- */
@@ -1837,6 +1924,23 @@ Hooks.once("init", () => {
           );
           ui.notifications.error(
             "Player attempted to purchase an item on a different scene."
+          );
+        }
+      }
+
+      if (data.type === "sell") {
+        let seller = game.actors.get(data.sellerId);
+        let buyer = canvas.tokens.get(data.tokenId);
+
+        if (buyer && buyer.actor && seller) {
+          transaction(seller, buyer.actor, data.itemId, data.quantity);
+        } else if (!seller) {
+          errorMessageToActor(
+            buyer,
+            "GM not available, the GM must on the same scene to sell an item."
+          );
+          ui.notifications.error(
+            "Player attempted to sell an item on a different scene."
           );
         }
       }
