@@ -278,7 +278,7 @@
                                 {{#each system.currency as |c i|}}
                                 <span>
                                     <label class="denomination {{i}}">{{i}}</label>
-                                    <label>{{c}}</label>
+                                    <input type="number" name="system.currency.{{i}}" value="{{c}}" min="0" placeholder="0" data-dtype="number"/>
                                 </span>
                                 {{/each}}
                             </ol>
@@ -289,14 +289,13 @@
                             {{#each playerItems as |section sid|}}
                                 {{#if section.items}}
                                     <li class="items-header flexrow inventory-header">
-                                        <h3 class="item-name">{{section.label}}</h3>
-                                        {{#if ../owner}}
-                                            <div class="item-controls">
-                                                <a class="item-control item-create" title="Create Item" data-type="{{section.type}}">
-                                                    <i class="fas fa-plus"></i> Add
-                                                </a>
-                                            </div>
-                                        {{/if}}
+                                        <h3 class="item-name flexrow">{{localize section.label}}</h3>
+                                        <div class="item-controls-empty"> </div>
+                                        <div class="item-detail item-weight-sheet">{{localize "DND5E.Weight"}}</div>
+                                        <div class="item-detail item-quantity-sheet">{{localize "DND5E.QuantityAbbr"}}</div>
+                                        <div class="item-detail item-price-sheet">{{localize "LOOTSHEET.Value"}}</div>
+
+                                        <div class="item-controls-empty"> </div>
                                     </li>
                                     <ol class="item-list">
                                 {{/if}}
@@ -310,14 +309,16 @@
                                                 {{item.name}}
                                             </h4>
                                         </div>
-                                        <div class="item-quantity">
-                                            <i class="fas fa-box" title="Quantity"></i> {{item.system.quantity}}
+                                        
+                                        <div class="item-detail item-weight">
+                                            {{lootsheetweight item.system.weight}}{{lootsheetstackweight item.system.weight item.system.quantity}}
                                         </div>
-                                        <div class="item-weight">
-                                            <i class="fas fa-weight-hanging" title="Weight"></i> {{lootsheetweight item.system.weight}}{{lootsheetstackweight item.system.weight item.system.quantity}}
+                                        <div class="item-detail item-quantity"> 
+                                            <input type="text" value="{{item.system.quantity}}" placeholder="0" data-dtype="Number" data-name="system.quantity">
                                         </div>
-                                        <div class="item-price">
-                                            <span class="item-price-label"><i class="fas fa-coins" title="Price (in gp)"></i> {{ lootsheetprice item.system.price.value ../../priceModifier }} </span><label class="denomination {{ item.system.price.denomination }}">&nbsp;</label>
+                                        <div class="item-detail item-price">
+                                            <span class="item-price-label"></i> {{ lootsheetprice item.system.price.value ../../priceModifier }} </span>
+                                            <label class="denomination {{ item.system.price.denomination }}">&nbsp;</label>
                                         </div>
 
                                         <div class="item-controls">

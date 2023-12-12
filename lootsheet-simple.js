@@ -159,26 +159,10 @@ class LootSheet5eNPC extends dnd5e.applications.actor.ActorSheet5eNPC {
         "priceModifier"
       );
     }
-    let totalWeight = 0;
-    this.actor.items.contents.forEach((item) => {
-      let weight = Math.round((item.system.quantity * item.system.weight * 100) / 100);
-      totalWeight += (isNaN(weight))? 0: weight;
-    });
-    
-    if (game.settings.get("lootsheet-simple", "includeCurrencyWeight")) {
-      let weight = (
-        Object.values(this.actor.system.currency).reduce(function (
-          accumVariable,
-          curValue
-        ) {
-          return accumVariable + curValue;
-        },
-        0) / 50
-      ).toNearest(0.01);  
-      totalWeight += (isNaN(weight))? 0: weight;
-    }
 
+    let totalWeight = 0;
     let totalPrice = 0;
+    let totalQuantity = 0;
     this.actor.items.contents.forEach(
       (item) => {
         if (item.system.price) {
@@ -208,15 +192,25 @@ class LootSheet5eNPC extends dnd5e.applications.actor.ActorSheet5eNPC {
             100
           );
         }
+        let addQuantity = Math.round((item.system.quantity * 100) / 100);
+        totalQuantity += (isNaN(addQuantity)) ? 0 : addQuantity
+        let weight = Math.round((item.system.quantity * item.system.weight * 100) / 100);
+        totalWeight += (isNaN(weight)) ? 0 : weight;
       }
-
     );
 
-  let totalQuantity = 0;
-  this.actor.items.contents.forEach((item) => {
-    let addQuantity = Math.round((item.system.quantity * 100) / 100);
-    totalQuantity += (isNaN(addQuantity))? 0 : addQuantity
-  });
+    if (game.settings.get("lootsheet-simple", "includeCurrencyWeight")) {
+      let weight = (
+        Object.values(this.actor.system.currency).reduce(function (
+          accumVariable,
+          curValue
+        ) {
+          return accumVariable + curValue;
+        },
+          0) / 50
+      ).toNearest(0.01);
+      totalWeight += (isNaN(weight)) ? 0 : weight;
+    }
 
     let selectedRollTable = await this.actor.getFlag(
       "lootsheet-simple",
@@ -682,10 +676,10 @@ class LootSheet5eNPC extends dnd5e.applications.actor.ActorSheet5eNPC {
         }
       );
       d.render(true);
-    }else{
+    } else {
       game.socket.emit(LootSheet5eNPC.SOCKET, packet);
     }
-    
+
   }
 
   /* -------------------------------------------- */
@@ -1270,7 +1264,7 @@ class LootSheet5eNPC extends dnd5e.applications.actor.ActorSheet5eNPC {
         type: "loot",
       },
     };
-    if(!actorData || !actorData.items) {
+    if (!actorData || !actorData.items) {
       return features;
     }
 
@@ -1626,7 +1620,7 @@ Hooks.once("init", () => {
     // console.log("buyerFunds before purchase", buyerFunds);
     //maybe realize later
     let blockCurencies = ["ep"]
-    
+
     const conversionRates = {
       pp: 1000,
       gp: 100,
@@ -1641,7 +1635,7 @@ Hooks.once("init", () => {
       ep: "sp",
       sp: "cp",
     };
-    
+
     let convert = (funds) => {
       let wallet = 0
       for (const coin in conversionRates) {
@@ -1657,7 +1651,7 @@ Hooks.once("init", () => {
 
 
     // console.log(`buyerFundsAsPlatinum : ${buyerFundsAsPlatinum}`);
-    
+
     if (itemCostInBronze >= buyerFundsAsBronze) {
       errorMessageToActor(buyer, `Not enough funds to purchase item.`);
       return;
@@ -1665,102 +1659,102 @@ Hooks.once("init", () => {
     //maybe realize later
     const GoToAnotherShopToExchange = true;
 
-    if (buyerFunds[itemCostDenomination] >= itemCostRaw){
+    if (buyerFunds[itemCostDenomination] >= itemCostRaw) {
       buyerFunds[itemCostDenomination] -= itemCostRaw;
       sellerFunds[itemCostDenomination] += itemCostRaw;
-    }else{
-    let payCoinCount = (coin,coinCost) => {
-      let payedThisCoins = (itemCostInBronze < coinCost)?
-          coinCost - (coinCost - Math.abs(itemCostInBronze)): coinCost;
-      return payedThisCoins/conversionRates[coin]
-    }
-    //we go through all the coins and try to pay off using them
-    //a little magic with data types
-    let ratesLikeArray = Object.entries(conversionRates)
-    ratesLikeArray.sort((a,b) => b[1] - a[1])
-    for (const i in ratesLikeArray) {
+    } else {
+      let payCoinCount = (coin, coinCost) => {
+        let payedThisCoins = (itemCostInBronze < coinCost) ?
+          coinCost - (coinCost - Math.abs(itemCostInBronze)) : coinCost;
+        return payedThisCoins / conversionRates[coin]
+      }
+      //we go through all the coins and try to pay off using them
+      //a little magic with data types
+      let ratesLikeArray = Object.entries(conversionRates)
+      ratesLikeArray.sort((a, b) => b[1] - a[1])
+      for (const i in ratesLikeArray) {
         let coin = ratesLikeArray[i][0]
         //calculating how many coins of this type I owe
         const amountCoin = buyerFunds[coin]
         if (amountCoin == 0) continue;
         let coinCost = amountCoin * conversionRates[coin]
-        let payedCoin = Math.floor(payCoinCount(coin,coinCost))
-        itemCostInBronze -= payedCoin  * conversionRates[coin]
-        
+        let payedCoin = Math.floor(payCoinCount(coin, coinCost))
+        itemCostInBronze -= payedCoin * conversionRates[coin]
+
         //Subtract from the buyer and add to the seller
         buyerFunds[coin] -= payedCoin;
         sellerFunds[coin] += payedCoin;
         if (itemCostInBronze == 0) break;
-    }
-    //if we have any left over
-
-    if (itemCostInBronze !== 0) {
-      let iteration = 0
-      let _oldItemCostInbronze
-      let _sortStop = (itemCostInBronze < 0)? true : false;
-      trychange:
-      while (itemCostInBronze != 0){
-
-        if (_sortStop && itemCostInBronze < 0) {
-          ratesLikeArray.sort((a,b) => b[1] - a[1])
-          _sortStop = !_sortStop
-        }else if (!_sortStop && itemCostInBronze > 0){
-          ratesLikeArray.sort((a,b) => a[1] - b[1])
-          _sortStop = !_sortStop
-        }
-
-        
-        for (const i in ratesLikeArray) {
-          let coin = ratesLikeArray[i][0]
-          let amountCoinOnByer = buyerFunds[coin]
-          let amountCoinOnSeller = sellerFunds[coin]
-          let ByerCoinCost = amountCoinOnByer * conversionRates[coin]
-          let SellerCoinCost = amountCoinOnSeller * conversionRates[coin]
-
-          if (itemCostInBronze > 0) {
-            if (amountCoinOnByer == 0) continue ;
-            
-            let payedCoin = Math.ceil(payCoinCount(coin,ByerCoinCost))
-            itemCostInBronze -= payedCoin * conversionRates[coin]
-            
-            buyerFunds[coin] -= payedCoin;
-            sellerFunds[coin] += payedCoin;
-
-          }else if (itemCostInBronze == 0) {
-            //Need to write a message, how much cp shop did not give
-            break trychange;
-          }else{
-            if (amountCoinOnSeller == 0) continue ;
-            let payedCoin = Math.floor(payCoinCount(coin,SellerCoinCost))
-            itemCostInBronze += payedCoin * conversionRates[coin]
-            if (_oldItemCostInbronze == itemCostInBronze){
-              if (!GoToAnotherShopToExchange) {
-                let gamemaster = 
-                game.users.forEach((u) => {
-                  if (u.isGM) {
-                    gamemaster = u;
-                  }
-                  
-                });
-                break trychange;
-              }else if (iteration > 3){
-                _oldItemCostInbronze = 0
-                sellerFunds["cp"] += Math.abs(itemCostInBronze)
-              }
-            }
-            buyerFunds[coin] += payedCoin;
-            sellerFunds[coin] -= payedCoin;
-            console.log(itemCostInBronze);
-          } 
-          if (iteration > 6){
-            break trychange;
-          }else{
-            iteration++
-          }
-        } 
-        _oldItemCostInbronze = itemCostInBronze
       }
-    }
+      //if we have any left over
+
+      if (itemCostInBronze !== 0) {
+        let iteration = 0
+        let _oldItemCostInbronze
+        let _sortStop = (itemCostInBronze < 0) ? true : false;
+        trychange:
+        while (itemCostInBronze != 0) {
+
+          if (_sortStop && itemCostInBronze < 0) {
+            ratesLikeArray.sort((a, b) => b[1] - a[1])
+            _sortStop = !_sortStop
+          } else if (!_sortStop && itemCostInBronze > 0) {
+            ratesLikeArray.sort((a, b) => a[1] - b[1])
+            _sortStop = !_sortStop
+          }
+
+
+          for (const i in ratesLikeArray) {
+            let coin = ratesLikeArray[i][0]
+            let amountCoinOnByer = buyerFunds[coin]
+            let amountCoinOnSeller = sellerFunds[coin]
+            let ByerCoinCost = amountCoinOnByer * conversionRates[coin]
+            let SellerCoinCost = amountCoinOnSeller * conversionRates[coin]
+
+            if (itemCostInBronze > 0) {
+              if (amountCoinOnByer == 0) continue;
+
+              let payedCoin = Math.ceil(payCoinCount(coin, ByerCoinCost))
+              itemCostInBronze -= payedCoin * conversionRates[coin]
+
+              buyerFunds[coin] -= payedCoin;
+              sellerFunds[coin] += payedCoin;
+
+            } else if (itemCostInBronze == 0) {
+              //Need to write a message, how much cp shop did not give
+              break trychange;
+            } else {
+              if (amountCoinOnSeller == 0) continue;
+              let payedCoin = Math.floor(payCoinCount(coin, SellerCoinCost))
+              itemCostInBronze += payedCoin * conversionRates[coin]
+              if (_oldItemCostInbronze == itemCostInBronze) {
+                if (!GoToAnotherShopToExchange) {
+                  let gamemaster =
+                    game.users.forEach((u) => {
+                      if (u.isGM) {
+                        gamemaster = u;
+                      }
+
+                    });
+                  break trychange;
+                } else if (iteration > 3) {
+                  _oldItemCostInbronze = 0
+                  sellerFunds["cp"] += Math.abs(itemCostInBronze)
+                }
+              }
+              buyerFunds[coin] += payedCoin;
+              sellerFunds[coin] -= payedCoin;
+              console.log(itemCostInBronze);
+            }
+            if (iteration > 6) {
+              break trychange;
+            } else {
+              iteration++
+            }
+          }
+          _oldItemCostInbronze = itemCostInBronze
+        }
+      }
     }
 
 
