@@ -1,6 +1,6 @@
 class LootSheet5eNPCHelper {
   /**
-   * Retrieve the loot permission for a player, given the current actor data.
+   * Retrieve the loot permission for a player, given the current actor system.
    *
    * It first tries to get an entry from the actor's permissions, if none is found it uses default, otherwise returns 0.
    *
@@ -86,8 +86,8 @@ class LootSheet5eNPC extends dnd5e.applications.actor.ActorSheet5eNPC {
     });
 
     Handlebars.registerHelper("lootsheetprice", function (basePrice, modifier) {
-      return (
-        (Math.round(basePrice * modifier * 100) / 100).toLocaleString("en")
+      return (Math.round(basePrice * modifier * 100) / 100).toLocaleString(
+        "en"
       );
     });
 
@@ -97,14 +97,14 @@ class LootSheet5eNPC extends dnd5e.applications.actor.ActorSheet5eNPC {
         "showStackWeight"
       );
       if (showStackWeight) {
-        return `/${(weight * qty).toLocaleString("en")}`;
+        return `/${(weight.value * qty).toLocaleString("en")}`;
       } else {
         return "";
       }
     });
 
     Handlebars.registerHelper("lootsheetweight", function (weight) {
-      return (Math.round(weight * 1e5) / 1e5).toString();
+      return (Math.round(weight.value * 1e5) / 1e5).toString();
     });
 
     const path = "systems/dnd5e/templates/actors/";
@@ -116,7 +116,7 @@ class LootSheet5eNPC extends dnd5e.applications.actor.ActorSheet5eNPC {
   static get defaultOptions() {
     const options = super.defaultOptions;
 
-    mergeObject(options, {
+    foundry.utils.mergeObject(options, {
       classes: ["dnd5e sheet actor npc npc-sheet loot-sheet-npc"],
       width: 890,
       height: 750,
@@ -168,16 +168,16 @@ class LootSheet5eNPC extends dnd5e.applications.actor.ActorSheet5eNPC {
         if (item.system.price) {
           let priceInGp = item.system.price.value;
           switch (item.system.price.denomination) {
-            case 'pp':
+            case "pp":
               priceInGp = item.system.price.value * 10;
               break;
-            case 'ep':
+            case "ep":
               priceInGp = item.system.price.value / 5;
               break;
-            case 'sp':
+            case "sp":
               priceInGp = item.system.price.value / 10;
               break;
-            case 'cp':
+            case "cp":
               priceInGp = item.system.price.value / 100;
               break;
             default:
@@ -185,17 +185,15 @@ class LootSheet5eNPC extends dnd5e.applications.actor.ActorSheet5eNPC {
               break;
           }
           totalPrice += Math.round(
-            (item.system.quantity *
-              priceInGp *
-              priceModifier *
-              100) /
-            100
+            (item.system.quantity * priceInGp * priceModifier * 100) / 100
           );
         }
         let addQuantity = Math.round((item.system.quantity * 100) / 100);
-        totalQuantity += (isNaN(addQuantity)) ? 0 : addQuantity
-        let weight = Math.round((item.system.quantity * item.system.weight * 100) / 100);
-        totalWeight += (isNaN(weight)) ? 0 : weight;
+        totalQuantity += isNaN(addQuantity) ? 0 : addQuantity;
+        let weight = Math.round(
+          (item.system.quantity * item.system.weight.value * 100) / 100
+        );
+        totalWeight += isNaN(weight) ? 0 : weight;
       }
     );
 
@@ -209,7 +207,7 @@ class LootSheet5eNPC extends dnd5e.applications.actor.ActorSheet5eNPC {
         },
           0) / 50
       ).toNearest(0.01);
-      totalWeight += (isNaN(weight)) ? 0 : weight;
+      totalWeight += isNaN(weight) ? 0 : weight;
     }
 
     let selectedRollTable = await this.actor.getFlag(
@@ -222,20 +220,14 @@ class LootSheet5eNPC extends dnd5e.applications.actor.ActorSheet5eNPC {
       "clearInventory"
     );
 
-    let itemQty = await this.actor.getFlag(
-      "lootsheet-simple",
-      "itemQty"
-    );
+    let itemQty = await this.actor.getFlag("lootsheet-simple", "itemQty");
 
     let itemQtyLimit = await this.actor.getFlag(
       "lootsheet-simple",
       "itemQtyLimit"
     );
 
-    let shopQty = await this.actor.getFlag(
-      "lootsheet-simple",
-      "shopQty"
-    );
+    let shopQty = await this.actor.getFlag("lootsheet-simple", "shopQty");
 
     sheetData.lootsheettype = lootsheettype;
     sheetData.selectedRollTable = selectedRollTable;
@@ -410,7 +402,7 @@ class LootSheet5eNPC extends dnd5e.applications.actor.ActorSheet5eNPC {
 
     let shopQtyRoll = new Roll(shopQtyFormula);
 
-    shopQtyRoll.roll();
+    await shopQtyRoll.evaluate();
     // console.log("Adding ${shopQtyRoll.result} items.");
     let rolltable = game.tables.getName(rolltableName);
     if (!rolltable) {
@@ -436,67 +428,75 @@ class LootSheet5eNPC extends dnd5e.applications.actor.ActorSheet5eNPC {
 
     for (let i = 0; i < shopQtyRoll.result; i++) {
       const rollResult = await rolltable.roll();
-      let newItem = null;
+      let itemToAdd = null;
 
       if (rollResult.results[0].documentCollection === "Item") {
-        newItem = game.items.get(rollResult.results[0].documentId);
+        itemToAdd = game.items.get(rollResult.results[0].documentId);
       } else {
         // Try to find it in the compendium
         const items = game.packs.get(rollResult.results[0].documentCollection);
-        newItem = await items.getDocument(rollResult.results[0].documentId);
+        itemToAdd = await items.getDocument(rollResult.results[0].documentId);
       }
-      if (!newItem || newItem === null) {
+      if (!itemToAdd || itemToAdd === null) {
         return ui.notifications.error(
           `No item found "${rollResult.results[0].documentId}".`
         );
       }
 
-      if (newItem.type === "spell") {
-        newItem = await Item5e.createScrollFromSpell(newItem);
+      if (itemToAdd.type === "spell") {
+        itemToAdd = await Item5e.createScrollFromSpell(itemToAdd);
       }
 
       let itemQtyRoll = new Roll(itemQtyFormula);
-      itemQtyRoll.roll();
-      // console.log`Loot Sheet | Adding ${itemQtyRoll.result} x ${newItem.name}`);
+      await itemQtyRoll.evaluate();
+
+      //console.log(itemQtyRoll.total);
+      // console.log(
+      //   `Loot Sheet | Adding ${itemQtyRoll.total} x ${itemToAdd.name}`
+      // );
 
       let existingItem = this.actor.items.find(
-        (item) => item.name == newItem.name
+        (item) => item.name == itemToAdd.name
       );
 
       if (existingItem === undefined) {
-        // console.log(`Loot Sheet | ${newItem.name} does not exist.`);
+        // console.log(`Loot Sheet | ${itemToAdd.name} does not exist.`);
 
         const createdItems = await this.actor.createEmbeddedDocuments("Item", [
-          newItem.toObject(),
+          itemToAdd.toObject(),
         ]);
-        existingItem = createdItems[0];
+        let newItem = createdItems[0];
 
         if (
           itemQtyLimit > 0 &&
-          Number(itemQtyLimit) < Number(itemQtyRoll.result)
+          Number(itemQtyLimit) < Number(itemQtyRoll.total)
         ) {
-          await existingItem.update({
-            "data.quantity": itemQtyLimit,
+          await newItem.update({
+            "system.quantity": itemQtyLimit,
           });
           if (!reducedVerbosity)
             ui.notifications.info(
-              `Added new ${itemQtyLimit} x ${newItem.name}.`
+              `Added new ${itemQtyLimit} x ${itemToAdd.name}.`
             );
         } else {
-          await existingItem.update({
-            "data.quantity": itemQtyRoll.result,
+          await newItem.update({
+            "system.quantity": itemQtyRoll.total,
           });
           if (!reducedVerbosity)
             ui.notifications.info(
-              `Added new ${itemQtyRoll.result} x ${newItem.name}.`
+              `Added new ${itemQtyRoll.total} x ${itemToAdd.name}.`
             );
         }
       } else {
-        // console.log(`Loot Sheet | Item ${newItem.name} exists.`, existingItem);
-
+        // console.log(
+        //   `Loot Sheet | Item ${itemToAdd.name} exists.`,
+        //   existingItem
+        // );
+        // console.log("existingqty", existingItem.system.quantity);
+        // console.log("toadd", itemQtyRoll.total);
         let newQty =
-          Number(existingItem.system.quantity) + Number(itemQtyRoll.result);
-        // console.log("newqty", newQty);
+          Number(existingItem.system.quantity) + Number(itemQtyRoll.total);
+        //console.log("newqty", newQty);
 
         if (
           itemQtyLimit > 0 &&
@@ -504,33 +504,33 @@ class LootSheet5eNPC extends dnd5e.applications.actor.ActorSheet5eNPC {
         ) {
           if (!reducedVerbosity)
             ui.notifications.info(
-              `${newItem.name} already at maximum quantity (${itemQtyLimit}).`
+              `${itemToAdd.name} already at maximum quantity (${itemQtyLimit}).`
             );
         } else if (itemQtyLimit > 0 && Number(itemQtyLimit) < Number(newQty)) {
           let updateItem = {
             _id: existingItem.id,
             data: {
-              quantity: itemQtyLimit
-            }
+              quantity: itemQtyLimit,
+            },
           };
-          await this.actor.updateEmbeddedDocuments('Item', [updateItem]);
+          await this.actor.updateEmbeddedDocuments("Item", [updateItem]);
           if (!reducedVerbosity)
             ui.notifications.info(
-              `Added additional quantity to ${newItem.name} to the specified maximum of ${itemQtyLimit}.`
+              `Added additional quantity to ${itemToAdd.name} to the specified maximum of ${itemQtyLimit}.`
             );
         } else {
           let updateItem = {
             _id: existingItem.id,
-            data: {
-              quantity: newQty
-            }
+            system: {
+              quantity: newQty,
+            },
           };
-          // console.log(updateItem);
-          await this.actor.updateEmbeddedDocuments('Item', [updateItem]);
+          //console.log(updateItem);
+          await this.actor.updateEmbeddedDocuments("Item", [updateItem]);
 
           if (!reducedVerbosity)
             ui.notifications.info(
-              `Added additional ${itemQtyRoll.result} quantity to ${newItem.name}.`
+              `Added additional ${itemQtyRoll.total} quantity to ${existingItem.name}.`
             );
         }
       }
@@ -638,8 +638,6 @@ class LootSheet5eNPC extends dnd5e.applications.actor.ActorSheet5eNPC {
       itemId: itemId,
       quantity: 1,
     };
-
-
 
     const packet = {
       type: "buy",
@@ -1064,7 +1062,7 @@ class LootSheet5eNPC extends dnd5e.applications.actor.ActorSheet5eNPC {
 
   _hackydistributeCoins(containerActor) {
     //This is identical as the distributeCoins function defined in the init hook which for some reason can't be called from the above _distributeCoins method of the lootsheet-simple class. I couldn't be bothered to figure out why a socket can't be called as the GM... so this is a hack but it works.
-    let actorData = containerActor;
+    let actorData = containerActor.system;
     let observers = [];
     let players = game.users.players;
 
@@ -1075,8 +1073,11 @@ class LootSheet5eNPC extends dnd5e.applications.actor.ActorSheet5eNPC {
         player
       );
       if (player != "default" && playerPermission >= 2) {
-        let actor = player.character;
-        if (actor != null && (player.role === 1 || player.role === 2))
+        let actor = game.actors.get(player.system.character);
+        if (
+          actor != null &&
+          (player.system.role === 1 || player.system.role === 2)
+        )
           observers.push(actor);
       }
     }
@@ -1084,8 +1085,10 @@ class LootSheet5eNPC extends dnd5e.applications.actor.ActorSheet5eNPC {
     if (observers.length === 0) return;
 
     // Calculate split of currency
-    let currencySplit = duplicate(
-      LootSheet5eNPCHelper.convertCurrencyFromObject(containerActor.system.currency)
+    let currencySplit = foundry.utils.duplicate(
+      LootSheet5eNPCHelper.convertCurrencyFromObject(
+        containerActor.system.currency
+      )
     );
 
     // keep track of the remainder
@@ -1109,7 +1112,7 @@ class LootSheet5eNPC extends dnd5e.applications.actor.ActorSheet5eNPC {
       let currency = LootSheet5eNPCHelper.convertCurrencyFromObject(
         u.system.currency
       ),
-        newCurrency = duplicate(
+        newCurrency = foundry.utils.duplicate(
           LootSheet5eNPCHelper.convertCurrencyFromObject(u.system.currency)
         );
 
@@ -1121,6 +1124,9 @@ class LootSheet5eNPC extends dnd5e.applications.actor.ActorSheet5eNPC {
         if (currencySplit[c] != null) {
           // Add currency to permitted actor
           newCurrency[c] = parseInt(currency[c] || 0) + currencySplit[c];
+          u.update({
+            "system.currency": newCurrency,
+          });
         }
       }
       u.update({
@@ -1130,6 +1136,23 @@ class LootSheet5eNPC extends dnd5e.applications.actor.ActorSheet5eNPC {
     containerActor.update({
       "system.currency": currencyRemainder,
     });
+
+    // Remove currency from loot actor.
+    let lootCurrency = LootSheet5eNPCHelper.convertCurrencyFromObject(
+      containerActor.system.currency
+    ),
+      zeroCurrency = {};
+
+    for (let c in lootCurrency) {
+      zeroCurrency[c] = {
+        type: currencySplit[c].type,
+        label: currencySplit[c].type,
+        value: currencyRemainder[c],
+      };
+      containerActor.update({
+        "system.currency": zeroCurrency,
+      });
+    }
 
     // Create chat message for coins received
     if (msg.length != 0) {
@@ -1181,7 +1204,7 @@ class LootSheet5eNPC extends dnd5e.applications.actor.ActorSheet5eNPC {
   _onCyclePermissionProficiencyBulk(event) {
     event.preventDefault();
 
-    let actorData = this.actor.data;
+    let actorData = this.actor.system;
 
     let field = $(event.currentTarget)
       .parent()
@@ -1196,9 +1219,9 @@ class LootSheet5eNPC extends dnd5e.applications.actor.ActorSheet5eNPC {
 
     let users = game.users.entities;
 
-    let currentPermissions = duplicate(actorData.permission);
+    let currentPermissions = foundry.utils.duplicate(actorData.permission);
     for (let u of users) {
-      if (u.role === 1 || u.role === 2) {
+      if (u.system.role === 1 || u.system.role === 2) {
         currentPermissions[u._id] = newLevel;
       }
     }
@@ -1210,7 +1233,7 @@ class LootSheet5eNPC extends dnd5e.applications.actor.ActorSheet5eNPC {
 
   _updatePermissions(actorData, playerId, newLevel, event) {
     // Read player permission on this actor and adjust to new level
-    let currentPermissions = duplicate(actorData.ownership);
+    let currentPermissions = foundry.utils.duplicate(actorData.ownership);
     console.log(currentPermissions);
     currentPermissions[playerId] = newLevel;
     // Save updated player permissions
@@ -1328,14 +1351,14 @@ class LootSheet5eNPC extends dnd5e.applications.actor.ActorSheet5eNPC {
    * @private
    */
   _prepareGMSettings(context) {
-    const playerData = [], observers = [];
+    const playerData = [],
+      observers = [];
     //console.log(game.users);
     //console.log("context", context);
 
     let players = game.users;
 
     for (let player of players) {
-
       //console.log(player);
 
       if (player.character) {
@@ -1355,9 +1378,7 @@ class LootSheet5eNPC extends dnd5e.applications.actor.ActorSheet5eNPC {
           player.lootPermission
         );
         playerData.push(player);
-
       }
-
     }
 
     let loot = {};
@@ -1504,20 +1525,20 @@ Hooks.once("init", () => {
         quantity = item.system.quantity;
       }
 
-      //let newItem = duplicate(item);
-      let newItem = duplicate(item);
+      //let newItem = foundry.utils.duplicate(item);
+      let newItem = foundry.utils.duplicate(item);
       // console.log("NEWITEM: \n");
       // console.log(newItem);
 
       const update = {
         _id: itemId,
-        "data.quantity": item.system.quantity - quantity,
+        "system.quantity": item.system.quantity - quantity,
       };
 
       // console.log("UPDATE: \n");
       // console.log(update);
 
-      if (update["data.quantity"] === 0) {
+      if (update["system.quantity"] === 0) {
         deletes.push(itemId);
       } else {
         updates.push(update);
@@ -1608,18 +1629,18 @@ Hooks.once("init", () => {
     // console.log("itemCostRaw", itemCostRaw);
     // console.log("itemCostDenomination", itemCostDenomination);
 
-    let buyerFunds = duplicate(
+    let buyerFunds = foundry.utils.duplicate(
       LootSheet5eNPCHelper.convertCurrencyFromObject(buyer.system.currency)
     );
 
-    let sellerFunds = duplicate(
+    let sellerFunds = foundry.utils.duplicate(
       LootSheet5eNPCHelper.convertCurrencyFromObject(seller.system.currency)
     );
 
     // console.log("sellerFunds before", sellerFunds);
     // console.log("buyerFunds before purchase", buyerFunds);
     //maybe realize later
-    let blockCurencies = ["ep"]
+    let blockCurencies = ["ep"];
 
     const conversionRates = {
       pp: 1000,
@@ -1637,18 +1658,17 @@ Hooks.once("init", () => {
     };
 
     let convert = (funds) => {
-      let wallet = 0
+      let wallet = 0;
       for (const coin in conversionRates) {
-        wallet += funds[coin] * conversionRates[coin]
+        wallet += funds[coin] * conversionRates[coin];
       }
-      return wallet
-    }
+      return wallet;
+    };
     //why bronze? because there will be no float
-    let buyerFundsAsBronze = convert(buyerFunds)
+    let buyerFundsAsBronze = convert(buyerFunds);
 
     let itemCostInBronze = itemCostRaw * conversionRates[itemCostDenomination];
     // console.log(`itemCostInPlatinum : ${itemCostInPlatinum}`);
-
 
     // console.log(`buyerFundsAsPlatinum : ${buyerFundsAsPlatinum}`);
 
@@ -1664,22 +1684,24 @@ Hooks.once("init", () => {
       sellerFunds[itemCostDenomination] += itemCostRaw;
     } else {
       let payCoinCount = (coin, coinCost) => {
-        let payedThisCoins = (itemCostInBronze < coinCost) ?
-          coinCost - (coinCost - Math.abs(itemCostInBronze)) : coinCost;
-        return payedThisCoins / conversionRates[coin]
-      }
+        let payedThisCoins =
+          itemCostInBronze < coinCost
+            ? coinCost - (coinCost - Math.abs(itemCostInBronze))
+            : coinCost;
+        return payedThisCoins / conversionRates[coin];
+      };
       //we go through all the coins and try to pay off using them
       //a little magic with data types
-      let ratesLikeArray = Object.entries(conversionRates)
-      ratesLikeArray.sort((a, b) => b[1] - a[1])
+      let ratesLikeArray = Object.entries(conversionRates);
+      ratesLikeArray.sort((a, b) => b[1] - a[1]);
       for (const i in ratesLikeArray) {
-        let coin = ratesLikeArray[i][0]
+        let coin = ratesLikeArray[i][0];
         //calculating how many coins of this type I owe
-        const amountCoin = buyerFunds[coin]
+        const amountCoin = buyerFunds[coin];
         if (amountCoin == 0) continue;
-        let coinCost = amountCoin * conversionRates[coin]
-        let payedCoin = Math.floor(payCoinCount(coin, coinCost))
-        itemCostInBronze -= payedCoin * conversionRates[coin]
+        let coinCost = amountCoin * conversionRates[coin];
+        let payedCoin = Math.floor(payCoinCount(coin, coinCost));
+        itemCostInBronze -= payedCoin * conversionRates[coin];
 
         //Subtract from the buyer and add to the seller
         buyerFunds[coin] -= payedCoin;
@@ -1689,57 +1711,51 @@ Hooks.once("init", () => {
       //if we have any left over
 
       if (itemCostInBronze !== 0) {
-        let iteration = 0
-        let _oldItemCostInbronze
-        let _sortStop = (itemCostInBronze < 0) ? true : false;
-        trychange:
-        while (itemCostInBronze != 0) {
-
+        let iteration = 0;
+        let _oldItemCostInbronze;
+        let _sortStop = itemCostInBronze < 0 ? true : false;
+        trychange: while (itemCostInBronze != 0) {
           if (_sortStop && itemCostInBronze < 0) {
-            ratesLikeArray.sort((a, b) => b[1] - a[1])
-            _sortStop = !_sortStop
+            ratesLikeArray.sort((a, b) => b[1] - a[1]);
+            _sortStop = !_sortStop;
           } else if (!_sortStop && itemCostInBronze > 0) {
-            ratesLikeArray.sort((a, b) => a[1] - b[1])
-            _sortStop = !_sortStop
+            ratesLikeArray.sort((a, b) => a[1] - b[1]);
+            _sortStop = !_sortStop;
           }
 
-
           for (const i in ratesLikeArray) {
-            let coin = ratesLikeArray[i][0]
-            let amountCoinOnByer = buyerFunds[coin]
-            let amountCoinOnSeller = sellerFunds[coin]
-            let ByerCoinCost = amountCoinOnByer * conversionRates[coin]
-            let SellerCoinCost = amountCoinOnSeller * conversionRates[coin]
+            let coin = ratesLikeArray[i][0];
+            let amountCoinOnByer = buyerFunds[coin];
+            let amountCoinOnSeller = sellerFunds[coin];
+            let ByerCoinCost = amountCoinOnByer * conversionRates[coin];
+            let SellerCoinCost = amountCoinOnSeller * conversionRates[coin];
 
             if (itemCostInBronze > 0) {
               if (amountCoinOnByer == 0) continue;
 
-              let payedCoin = Math.ceil(payCoinCount(coin, ByerCoinCost))
-              itemCostInBronze -= payedCoin * conversionRates[coin]
+              let payedCoin = Math.ceil(payCoinCount(coin, ByerCoinCost));
+              itemCostInBronze -= payedCoin * conversionRates[coin];
 
               buyerFunds[coin] -= payedCoin;
               sellerFunds[coin] += payedCoin;
-
             } else if (itemCostInBronze == 0) {
               //Need to write a message, how much cp shop did not give
               break trychange;
             } else {
               if (amountCoinOnSeller == 0) continue;
-              let payedCoin = Math.floor(payCoinCount(coin, SellerCoinCost))
-              itemCostInBronze += payedCoin * conversionRates[coin]
+              let payedCoin = Math.floor(payCoinCount(coin, SellerCoinCost));
+              itemCostInBronze += payedCoin * conversionRates[coin];
               if (_oldItemCostInbronze == itemCostInBronze) {
                 if (!GoToAnotherShopToExchange) {
-                  let gamemaster =
-                    game.users.forEach((u) => {
-                      if (u.isGM) {
-                        gamemaster = u;
-                      }
-
-                    });
+                  let gamemaster = game.users.forEach((u) => {
+                    if (u.isGM) {
+                      gamemaster = u;
+                    }
+                  });
                   break trychange;
                 } else if (iteration > 3) {
-                  _oldItemCostInbronze = 0
-                  sellerFunds["cp"] += Math.abs(itemCostInBronze)
+                  _oldItemCostInbronze = 0;
+                  sellerFunds["cp"] += Math.abs(itemCostInBronze);
                 }
               }
               buyerFunds[coin] += payedCoin;
@@ -1749,14 +1765,13 @@ Hooks.once("init", () => {
             if (iteration > 6) {
               break trychange;
             } else {
-              iteration++
+              iteration++;
             }
           }
-          _oldItemCostInbronze = itemCostInBronze
+          _oldItemCostInbronze = itemCostInBronze;
         }
       }
     }
-
 
     // Update buyer's funds
     buyer.update({
@@ -1786,7 +1801,7 @@ Hooks.once("init", () => {
   }
 
   function distributeCoins(containerActor) {
-    let actorData = containerActor;
+    let actorData = containerActor.system;
     let observers = [];
     let players = game.users.players;
 
@@ -1797,8 +1812,11 @@ Hooks.once("init", () => {
         player
       );
       if (player != "default" && playerPermission >= 2) {
-        let actor = player.character;
-        if (actor != null && (player.role === 1 || player.role === 2))
+        let actor = game.actors.get(player.system.character);
+        if (
+          actor != null &&
+          (player.system.role === 1 || player.system.role === 2)
+        )
           observers.push(actor);
       }
     }
@@ -1806,8 +1824,10 @@ Hooks.once("init", () => {
     if (observers.length === 0) return;
 
     // Calculate split of currency
-    let currencySplit = duplicate(
-      LootSheet5eNPCHelper.convertCurrencyFromObject(containerActor.system.currency)
+    let currencySplit = foundry.utils.duplicate(
+      LootSheet5eNPCHelper.convertCurrencyFromObject(
+        containerActor.system.currency
+      )
     );
 
     // keep track of the remainder
@@ -1829,9 +1849,9 @@ Hooks.once("init", () => {
 
       msg = [];
       let currency = LootSheet5eNPCHelper.convertCurrencyFromObject(
-        u.system.currency
-      ),
-        newCurrency = duplicate(
+          u.system.currency
+        ),
+        newCurrency = foundry.utils.duplicate(
           LootSheet5eNPCHelper.convertCurrencyFromObject(u.system.currency)
         );
 
@@ -1843,14 +1863,28 @@ Hooks.once("init", () => {
 
         // Add currency to permitted actor
         newCurrency[c] = parseInt(currency[c] || 0) + currencySplit[c];
+
+        u.update({
+          "system.currency": newCurrency,
+        });
       }
 
-      u.update({
-        "system.currency": newCurrency
-      });
-      containerActor.update({
-        "system.currency": currencyRemainder
-      });
+      // Remove currency from loot actor.
+      let lootCurrency = LootSheet5eNPCHelper.convertCurrencyFromObject(
+          containerActor.system.currency
+        ),
+        zeroCurrency = {};
+
+      for (let c in lootCurrency) {
+        zeroCurrency[c] = {
+          type: currencySplit[c].type,
+          label: currencySplit[c].type,
+          value: currencyRemainder[c],
+        };
+        containerActor.update({
+          "system.currency": zeroCurrency,
+        });
+      }
 
       // Create chat message for coins received
       if (msg.length != 0) {
@@ -1869,7 +1903,6 @@ Hooks.once("init", () => {
   }
 
   function lootCoins(containerActor, looter) {
-
     let sheetCurrency = LootSheet5eNPCHelper.convertCurrencyFromObject(
       containerActor.system.currency
     );
@@ -1877,12 +1910,10 @@ Hooks.once("init", () => {
     // add currency to actors existing coins
     let msg = [];
     let currency = LootSheet5eNPCHelper.convertCurrencyFromObject(
-      looter.system.currency
-    ),
-      newCurrency = duplicate(
-        LootSheet5eNPCHelper.convertCurrencyFromObject(
-          looter.system.currency
-        )
+        looter.system.currency
+      ),
+      newCurrency = foundry.utils.duplicate(
+        LootSheet5eNPCHelper.convertCurrencyFromObject(looter.system.currency)
       );
 
     for (let c in currency) {
@@ -2011,7 +2042,10 @@ Hooks.once("init", () => {
         lootCoins(container.actor, looter);
       }
     }
-    if (data.type === "error" && data.targetId === game.user.character._id) {
+    if (
+      data.type === "error" &&
+      data.targetId === game.user.character._id
+    ) {
       console.log("Loot Sheet | Transaction Error: ", data.message);
       return ui.notifications.error(data.message);
     }
