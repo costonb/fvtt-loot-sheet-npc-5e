@@ -280,7 +280,7 @@
                                 {{#each system.currency as |c i|}}
                                 <span>
                                     <label class="denomination {{i}}">{{i}}</label>
-                                    <input type="number" name="system.currency.{{i}}" value="{{c}}" min="0" placeholder="0" data-dtype="number"/>
+                                    <input type="number" value="{{c}}" min="0" placeholder="0" data-dtype="number" disabled/>
                                 </span>
                                 {{/each}}
                             </ol>
