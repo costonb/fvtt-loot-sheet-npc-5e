@@ -1302,7 +1302,7 @@ class LootSheet5eNPC extends dnd5e.applications.actor.ActorSheet5eNPC {
 
 //Register the loot sheet
 Actors.registerSheet("dnd5e", LootSheet5eNPC, {
-  label: "LOOTSHEET:SheetName",
+  label: "LOOTSHEET.SheetName",
   types: ["npc"],
   makeDefault: false,
 });

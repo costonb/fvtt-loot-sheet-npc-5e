@@ -48,9 +48,9 @@
                             <select class="sheet-type" name="system.flags.lootsheet-simple.lootsheettype">
                                 {{#select system.flags.lootsheet-simple.lootsheettype}}
                                     {{#ifeq lootsheettype "Merchant"}}
-                                        <option value="Loot" selected>{{localize "ITEM.TypeLoot"}}</option>
+                                        <option value="Loot" selected>{{localize "LOOTSHEET.Loot"}}</option>
                                     {{else}}
-                                        <option value="Loot">{{localize "ITEM.TypeLoot"}}</option>
+                                        <option value="Loot">{{localize "LOOTSHEET.Loot"}}</option>
                                     {{/ifeq}}
                                     {{#ifeq lootsheettype "Merchant"}}
                                         <option value="Merchant" selected>{{localize "LOOTSHEET.Merchant"}}</option>

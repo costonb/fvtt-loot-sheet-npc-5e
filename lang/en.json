@@ -1,10 +1,11 @@
 {   
-    "LOOTSHEET.SheetName": "MerchantLootSheet",
+    "LOOTSHEET.SheetName": "Loot Sheet NPC 5e",
     "LOOTSHEET.Merchant":"Merchant",
+    "LOOTSHEET.Loot":"Loot",
     "LOOTSHEET.Buy":"Buy item",
     "LOOTSHEET.BuyStack":"Buy Stack",
     "LOOTSHEET.LootStack":"Loot Stack",
-    "LOOTSHEET.Loot":"Loot Item",
+    "LOOTSHEET.LootItem":"Loot Item",
     "LOOTSHEET.EditItem":"Edit Item",
     "LOOTSHEET.DeleteItem":"Delete Item",
     "LOOTSHEET.TypeOfSheetName":"Type",
