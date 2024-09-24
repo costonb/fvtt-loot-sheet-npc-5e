@@ -1,0 +1,366 @@
+<form class="interactable tab-features" autocomplete="off">
+  <header class="sheet-header">
+    <div class="left">
+      <div class="portrait">
+        <img src="{{ actor.img }}" title="{{ actor.name }}" data-edit="img" />
+      </div>
+    </div>
+
+    <div class="right stats">
+      <div class="top">
+        <div class="left">
+          <div class="document-name">
+            <input
+              name="name"
+              type="text"
+              value="{{ actor.name }}"
+              placeholder="Character Name"
+              autocomplete="off"
+            />
+          </div>
+        </div>
+
+        <div class="right">
+          <div class="left">
+            <div class="sheet-header-buttons">
+              {{#ifeq lootsheettype "Loot"}} {{#if lootAll}}
+              <!-- <div class="charbutton">
+                          <button type="button" class="loot-all" name="loot-all" value="1"><i class="fas fa-gem"></i> Loot All</button>
+                      </div> -->
+              {{/if}} {{/ifeq}} {{#if isGM}} {{#ifeq lootsheettype "Merchant"}}
+              <button
+                type="button"
+                class="price-modifier gold-button"
+                name="price-modifier"
+                data-tooltip="{{localize 'LOOTSHEET.PriceModifier'}}"
+                aria-label="{{localize 'LOOTSHEET.PriceModifier'}}"
+              >
+                <i class="fa fa-balance-scale"></i>
+              </button>
+              {{/ifeq}} {{/if}}
+              <button
+                type="button"
+                class="gold-button"
+                data-tooltip="DND5E.Biography"
+                aria-label="DND5E.Biography"
+              >
+                <i class="fas fa-feather"></i>
+              </button>
+            </div>
+            <div class="proficiency">
+              <span>{{localize lootsheettype}}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="middle ability-scores card flexrow">
+        <div class="ability-score">
+          <img
+            src="modules/lootsheet-simple/icons/container.svg"
+            alt="{{localize 'DND5E.ItemContainerCapacityItems'}}"
+          />
+          <a class="label"
+            >{{localize "LOOTSHEET.Total"}}
+            {{localize
+            "DND5E.ItemContainerCapacityItems"}}</a
+          >
+          <div class="score">{{ totalItems }}</div>
+        </div>
+        <div class="ability-score">
+          <img
+            src="modules/lootsheet-simple/icons/item-grant.svg"
+            alt="{{localize 'DND5E.QuantityAbbr'}}"
+          />
+          <a class="label">{{localize "LOOTSHEET.Total"}} {{localize "DND5E.QuantityAbbr"}}</a>
+          <div class="score">{{ totalQuantity }}</div>
+        </div>
+        <div class="ability-score">
+          <img
+            src="modules/lootsheet-simple/icons/consumable.svg"
+            alt="{{localize 'DND5E.Weight'}}"
+          />
+          <a class="label">{{localize "LOOTSHEET.Total"}} {{localize "DND5E.Weight"}}</a>
+          <div class="score">{{ totalWeight }} <i class="fas fa-weight-hanging"></i></div>
+        </div>
+
+        <div class="ability-score">
+          <img src="modules/lootsheet-simple/icons/loot.svg" alt="Loot" />
+          {{#ifeq lootsheettype "Merchant"}}
+          <a class="label">{{localize "LOOTSHEET.Total"}} {{localize "DND5E.Price"}}</a>
+          {{/ifeq}} {{#ifeq lootsheettype "Loot"}}
+          <a class="label">{{localize "LOOTSHEET.Total"}} {{localize "LOOTSHEET.Value"}}</a>
+          {{/ifeq}}
+          <div class="score">
+            {{ totalPrice }}
+            <i class="currency gp" style="vertical-align: bottom" data-tooltip="Gold"></i>
+          </div>
+        </div>
+      </div>
+
+      <div class="bottom"></div>
+    </div>
+  </header>
+
+  <section class="sheet-body">
+    <div class="main-content">
+      <div class="sidebar">
+        <div class="pills-group">
+          <h3 class="icon">
+            <i class="fas fa-shoe-prints"></i>
+            <span class="roboto-upper">Speed</span>
+          </h3>
+          <ul class="pills"></ul>
+        </div>
+
+        <div class="pills-group">
+          <h3 class="icon">
+            <i class="fas fa-briefcase"></i>
+            <span class="roboto-upper">Skills</span>
+          </h3>
+          <ul class="pills"></ul>
+        </div>
+
+        <div class="pills-group">
+          <h3 class="icon">
+            <i class="fas fa-eye"></i>
+            <span class="roboto-upper">Senses</span>
+          </h3>
+          <ul class="pills">
+            <li class="pill">
+              <span class="label">Passive Perception</span>
+              <span class="separator">|</span>
+              <span class="value">10</span>
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <section class="tab-body">
+        <div class="tab inventory active" data-group="primary" data-tab="features">
+          <dnd5e-inventory class="inventory-element" v2="">
+            <section class="currency">
+              <button
+                type="button"
+                class="item-action unbutton"
+                data-action="currency"
+                data-tooltip="DND5E.CurrencyManager.Title"
+                aria-label="Manage Currency"
+              >
+                <i class="fas fa-coins"></i>
+              </button>
+
+              {{#each system.currency}}
+              <label aria-label="{{ lookup (lookup @root.config.currencies @key) 'label' }}">
+                <i
+                  class="currency {{ @key }}"
+                  data-tooltip="{{ lookup (lookup @root.config.currencies @key) 'label' }}"
+                ></i>
+                <input
+                  type="text"
+                  class="currency uninput"
+                  name="system.currency.{{ @key }}"
+                  value="{{ this }}"
+                  data-dtype="Number"
+                  inputmode="numeric"
+                  pattern="[0-9+=\-]*"
+                />
+              </label>
+              {{/each}} {{#ifeq lootsheettype "Loot"}} {{#if lootCurrency}}
+              <button
+                type="button"
+                class="item-action unbutton currency-loot"
+                data-tooltip="Loot Coins"
+                aria-label="Loot Coins"
+              >
+                <i class="fas fa-gem"></i>
+              </button>
+              {{/if}} {{/ifeq}}
+            </section>
+
+            <div class="middle">
+              {{!-- Searching & Filtering --}}
+              <item-list-controls
+                for="inventory"
+                label="{{ localize 'DND5E.InventorySearch' }}"
+                sort="toggle"
+                collection="items"
+              >
+              </item-list-controls>
+            </div>
+
+            {{!-- Inventory List --}}
+            <section class="items-list inventory-list" data-item-list="inventory">
+              {{!-- Sections / Categories --}}
+              {{#each inventory as |
+              section |}}
+              <div class="items-section card" {{ dnd5e-dataset dataset }}>
+                {{!-- Section Header --}}
+                <div class="items-header header">
+                  <h3 class="item-name">{{ localize section.label }}</h3>
+
+                  <div class="item-header item-weight">
+                    {{ localize "DND5E.Weight" }}
+                  </div>
+                  <div class="item-header item-quantity">
+                    {{ localize "DND5E.Quantity" }}
+                  </div>
+                  {{#ifeq ../lootsheettype "Merchant"}}
+                  <div class="item-header item-price">
+                    {{ localize "DND5E.Price" }}
+                  </div>
+                  {{/ifeq}}
+
+                  {{#ifeq ../lootsheettype "Loot"}}
+                  <div class="item-header item-price">Value</div>
+                  {{/ifeq}}
+
+                  <div class="item-header item-controls"></div>
+                </div>
+
+                {{!-- Section Contents --}}
+                <ol class="item-list unlist">
+                  {{#each items as |item|}}
+                  {{#dnd5e-itemContext item as |ctx|}}
+
+                  {{!-- Items --}}
+                  <li
+                    class="item collapsible {{#unless ctx.isExpanded}}collapsed{{/unless}}"
+                    data-item-id="{{ item.id }}"
+                    data-entry-id="{{ item.id }}"
+                    data-item-name="{{ item.name }}"
+                    data-item-sort="{{ item.sort }}"
+                    data-ungrouped="all"
+                    data-grouped="{{ item.type }}"
+                  >
+                    <div class="item-row">
+                      {{!-- Item Name --}}
+                      <div
+                        class="item-name item-action item-tooltip {{ @root.rollableClass }}"
+                        role="button"
+                        data-action="edit"
+                        aria-label="{{ item.name }}"
+                      >
+                        <img
+                          class="item-image gold-icon"
+                          src="{{ item.img }}"
+                          alt="{{ item.name }}"
+                        />
+                        <div class="name name-stacked">
+                          <span class="title">{{ item.name }}</span>
+                          {{#if ctx.subtitle}}
+                          <span class="subtitle">{{{ ctx.subtitle }}}</span>
+                          {{/if}}
+                        </div>
+                      </div>
+
+                      {{!-- Item Weight --}}
+                      <div
+                        class="item-detail item-weight {{#unless ctx.totalWeight}}empty{{/unless}}"
+                      >
+                        {{#if ctx.totalWeight}}
+                        <i class="fas fa-weight-hanging"></i> {{ ctx.totalWeight }} {{/if}}
+                      </div>
+
+                      {{!-- Item Quantity --}}
+                      <div class="item-detail item-quantity">
+                        {{#if @root.owner}} {{#notequal item.type "container"}}
+                        <a
+                          class="adjustment-button"
+                          data-action="decrease"
+                          data-property="system.quantity"
+                        >
+                          <i class="fas fa-minus"></i>
+                        </a>
+                        {{/notequal}} {{/if}}
+                        <input
+                          type="text"
+                          value="{{ item.system.quantity }}"
+                          placeholder="0"
+                          data-dtype="Number"
+                          data-name="system.quantity"
+                          inputmode="numeric"
+                          pattern="[0-9+=\-]*"
+                          min="0"
+                        />
+                        {{#if @root.owner}} {{#notequal item.type "container"}}
+                        <a
+                          class="adjustment-button"
+                          data-action="increase"
+                          data-property="system.quantity"
+                        >
+                          <i class="fas fa-plus"></i>
+                        </a>
+                        {{/notequal}} {{/if}}
+                      </div>
+
+                      {{!-- Item Price --}}
+                      <div
+                        class="item-detail item-price {{#unless item.system.price.value}}empty{{/unless}}"
+                      >
+                        {{#if item.system.price.value}}
+                        {{ lootsheetprice item.system.price.value ../../priceModifier }}
+                        <i class="currency {{ item.system.price.denomination }}"></i>
+                        {{/if}}
+                      </div>
+
+                      {{!-- Item Status --}}
+                      <div class="item-detail item-controls">
+                        {{!-- Expand/Collapse --}}
+                        <a
+                          class="item-control interface-only"
+                          data-toggle-description
+                          aria-label="{{ localize 'DND5E.ToggleDescription' }}"
+                        >
+                          {{#if ctx.isExpanded}}
+                          <i class="fas fa-compress"></i>
+                          {{else}}
+                          <i class="fas fa-expand"></i>
+                          {{/if}}
+                        </a>
+
+                        {{!-- Context Menu --}}
+                        <a
+                          class="item-control interface-only"
+                          data-context-menu
+                          aria-label="{{ localize 'DND5E.AdditionalControls' }}"
+                        >
+                          <i class="fas fa-ellipsis-vertical"></i>
+                        </a>
+                      </div>
+                    </div>
+
+                    <div class="item-description collapsible-content">
+                        <div class="wrapper">
+                            {{#if ctx.isExpanded}}
+                                {{> "dnd5e.item-summary" ctx.expanded }}
+                            {{/if}}
+                        </div>
+                    </div>
+                  </li>
+                  {{/dnd5e-itemContext}}
+                  {{/each}}
+                </ol>
+              </div>
+              {{/each}}
+            </section>
+
+            <div class="bottom">
+              {{!-- Encumbrance --}}
+              <div class="encumbrance"></div>
+
+              {{!-- Child Creation --}}
+              <button
+                type="button"
+                class="create-child gold-button"
+                aria-label="{{ 'SIDEBAR.Create' type=(localize 'DOCUMENT.Item') }}"
+              >
+                <i class="fas fa-plus"></i>
+              </button>
+            </div>
+          </dnd5e-inventory>
+        </div>
+      </section>
+    </div>
+  </section>
+</form>

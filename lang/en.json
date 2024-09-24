@@ -26,7 +26,8 @@
     "LOOTSHEET.Currency":"Currency",
     "LOOTSHEET.QuantityWindow": "Quantity",
     "LOOTSHEET.Quantity":"Quantity",
-    "LOOTSHEET.Value":"Value"
+    "LOOTSHEET.Value":"Value",
+    "LOOTSHEET.Total":"Total"
 }
 
 
