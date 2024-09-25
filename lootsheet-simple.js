@@ -81,6 +81,16 @@ class LootSheet5eNPC extends dnd5e.applications.actor.ActorSheet5eNPC2 {
       return arg1 == arg2 ? options.fn(this) : options.inverse(this)
     })
 
+    // Register the 'ifnot' helper
+    Handlebars.registerHelper('ifnot', function (condition, options) {
+      // Check if the condition is false, null, undefined, or falsy
+      if (!condition) {
+        return options.fn(this) // Render the block if the condition is falsy
+      } else {
+        return options.inverse(this) // Render the else block if the condition is true
+      }
+    })
+
     Handlebars.registerHelper('unequals', function (arg1, arg2, options) {
       return arg1 != arg2 ? options.fn(this) : options.inverse(this)
     })

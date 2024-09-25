@@ -113,3 +113,10 @@
 .loot-sheet-npc .tab.inventory.active.false {
 	padding-left: 0 !important;
 }
+
+.loot-sheet-npc .item-buy,
+.loot-sheet-npc .item-buyall,
+.loot-sheet-npc .item-loot,
+.loot-sheet-npc .item-lootall {
+	color: var(--color-text-light-6) !important;
+}

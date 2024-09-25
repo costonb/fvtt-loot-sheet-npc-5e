@@ -55,7 +55,21 @@
               >
                 <i class="fa fa-balance-scale"></i>
               </button>
-              {{/ifeq}} {{/if}}
+              {{/ifeq}}
+
+              {{/if}}
+
+              {{#ifeq lootsheettype "Loot"}}
+              <button
+                type="button"
+                class="loot-all gold-button"
+                name="loot-all"
+                data-tooltip="{{localize 'LOOTSHEET.LootAll'}}"
+                aria-label="{{localize 'LOOTSHEET.LootAll'}}"
+              >
+                <i class="fas fa-gem"></i>
+              </button>
+              {{/ifeq}}
             </div>
             <div class="proficiency">
               <span>{{localize lootsheettype}}</span>
@@ -163,7 +177,19 @@
                 {{#if (eq table.name ../selectedRollTable)
 
 
+
+
+
+
+
+
                 }}selected{{/if
+
+
+
+
+
+
 
 
                 }}>
@@ -475,6 +501,34 @@
                           {{/if}}
                         </a>
 
+                        {{#ifnot @root.editable}}
+                        {{#ifeq ../../lootsheettype "Loot"}}
+                        <a
+                          class="item-control item-lootall item-action"
+                          title="{{localize 'LOOTSHEET.LootStack'}}"
+                          ><i class="far fa-gem"></i
+                        ></a>
+                        <a
+                          class="item-control item-loot item-action"
+                          title="{{localize 'LOOTSHEET.Loot'}}"
+                          ><i class="fas fa-gem"></i
+                        ></a>
+                        {{/ifeq}}
+
+                        {{#ifeq ../../lootsheettype "Merchant"}}
+                        <a
+                          class="item-control item-buyall item-action"
+                          title="{{localize 'LOOTSHEET.BuyStack'}}"
+                          ><i class="fas fa-coins"></i
+                        ></a>
+                        <a
+                          class="item-control item-buy item-action"
+                          title="{{localize 'LOOTSHEET.Buy'}}"
+                          ><i class="fas fa-dollar-sign"></i
+                        ></a>
+                        {{/ifeq}}
+                        {{/ifnot}}
+
                         {{!-- Context Menu --}}
                         <a
                           class="item-control interface-only"
@@ -501,6 +555,7 @@
               {{/each}}
             </section>
 
+            {{#if @root.owner}}
             <div class="bottom">
               {{!-- Encumbrance --}}
               <div class="encumbrance"></div>
@@ -514,6 +569,7 @@
                 <i class="fas fa-plus"></i>
               </button>
             </div>
+            {{/if}}
           </dnd5e-inventory>
         </div>
 
@@ -528,6 +584,7 @@
           {{!-- Public Information --}}
           <div class="middle" data-target="system.details.biography.public">
             <h3 class="icon">
+              {{#if @root.owner}}
               <a
                 class="editor-edit"
                 data-action="editDescription"
@@ -536,6 +593,7 @@
                 <i class="fas fa-feather"></i>
               </a>
               <dnd5e-icon src="systems/dnd5e/icons/svg/ink-pot.svg"></dnd5e-icon>
+              {{/if}}
               <span class="roboto-upper">{{ localize "DND5E.Public" }}</span>
             </h3>
 
@@ -547,6 +605,7 @@
           {{!-- Details --}}
           <div class="bottom" data-target="system.details.biography.value">
             <h3 class="icon">
+              {{#if @root.owner}}
               <a
                 class="editor-edit"
                 data-action="editDescription"
@@ -555,6 +614,7 @@
                 <i class="fas fa-feather"></i>
               </a>
               <dnd5e-icon src="systems/dnd5e/icons/svg/ink-pot.svg"></dnd5e-icon>
+              {{/if}}
               <span class="roboto-upper">{{ localize "DND5E.Details" }}</span>
             </h3>
 
