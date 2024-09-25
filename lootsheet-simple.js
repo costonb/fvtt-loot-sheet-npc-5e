@@ -290,6 +290,26 @@ class LootSheet5eNPC extends dnd5e.applications.actor.ActorSheet5eNPC2 {
     // Sheet Type
     html.find('.sheet-type').change((ev) => this._changeSheetType(ev, html))
 
+    // Select the <nav> element and find all <a> elements inside it
+    const nav = $('.loot-sheet-npc nav.tabs');
+    const links = nav.find('a.item.control');
+
+    // Move the second <a> to the first position
+    if (links.eq(1).length) {
+      links.eq(1).insertBefore(links.eq(0)); // Move the second <a> before the first <a>
+    }
+
+    // Move the fifth <a> to the second position
+    if (links.eq(4).length) {
+      links.eq(4).insertAfter(nav.find('a.item.control').first()); // Move the fifth <a> to after the new first <a>
+    }
+
+    // Remove the remaining <a> elements (original first, third, and fourth)
+    nav.find('a.item.control').slice(2).remove(); // Remove from the third onward
+
+    // Add the "active" class to the new first <a> element
+    nav.find('a.item.control').first().addClass('active').attr('data-tab', 'features');
+
     // Roll Table
     //html.find('.sheet-type').change(ev => this._changeSheetType(ev, html));
   }

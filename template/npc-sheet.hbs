@@ -1,23 +1,41 @@
-<form class="interactable tab-features" autocomplete="off">
+<form class="interactable tab-features type-{{localize lootsheettype}}" autocomplete="off">
   <header class="sheet-header">
     <div class="left">
       <div class="portrait">
-        <img src="{{ actor.img }}" title="{{ actor.name }}" data-edit="img" />
+        {{!-- Portrait --}}
+        {{#if editable}}
+        <label class="slide-toggle">
+          <input
+            type="checkbox"
+            name="flags.dnd5e.showTokenPortrait"
+            {{
+            checked
+            portrait.token
+            }}
+          />
+          {{#if portrait.token}}
+          {{ localize "DOCUMENT.Token" }}
+          <i class="fas fa-toggle-on"></i>
+          {{else}}
+          {{ localize "DND5E.Portrait" }}
+          <i class="fas fa-toggle-off"></i>
+          {{/if}}
+        </label>
+        {{/if}}
+        <img src="{{ portrait.src }}" alt="{{ actor.name }}"
+        {{#if (and editable portrait.path)}}data-edit="{{ portrait.path }}"{{/if}}>
       </div>
     </div>
 
     <div class="right stats">
       <div class="top">
         <div class="left">
-          <div class="document-name">
-            <input
-              name="name"
-              type="text"
-              value="{{ actor.name }}"
-              placeholder="Character Name"
-              autocomplete="off"
-            />
-          </div>
+          {{!-- Name --}}
+          {{#if editable}}
+          <input type="text" name="name" class="document-name uninput" value="{{ actor.name }}" />
+          {{else}}
+          <div class="document-name">{{ actor.name }}</div>
+          {{/if}}
         </div>
 
         <div class="right">
@@ -38,14 +56,6 @@
                 <i class="fa fa-balance-scale"></i>
               </button>
               {{/ifeq}} {{/if}}
-              <button
-                type="button"
-                class="gold-button"
-                data-tooltip="DND5E.Biography"
-                aria-label="DND5E.Biography"
-              >
-                <i class="fas fa-feather"></i>
-              </button>
             </div>
             <div class="proficiency">
               <span>{{localize lootsheettype}}</span>
@@ -306,6 +316,20 @@
 
                       {{!-- Item Status --}}
                       <div class="item-detail item-controls">
+                        {{#if @root.editable}}
+                          {{!-- Editing --}}
+                          <a class="item-control item-action" data-action="edit" data-tooltip="DND5E.ItemEdit"
+                              aria-label="{{ localize "DND5E.ItemEdit" }}">
+                              <i class="fas fa-pen-to-square"></i>
+                          </a>
+
+                          {{!-- Deleting --}}
+                          <a class="item-control item-action" data-action="delete" data-tooltip="DND5E.ItemDelete"
+                              aria-label="{{ localize "DND5E.ItemDelete" }}">
+                              <i class="fas fa-trash"></i>
+                          </a>
+                          {{/if}}
+                          
                         {{!-- Expand/Collapse --}}
                         <a
                           class="item-control interface-only"
@@ -331,11 +355,11 @@
                     </div>
 
                     <div class="item-description collapsible-content">
-                        <div class="wrapper">
-                            {{#if ctx.isExpanded}}
-                                {{> "dnd5e.item-summary" ctx.expanded }}
-                            {{/if}}
-                        </div>
+                      <div class="wrapper">
+                        {{#if ctx.isExpanded}}
+                        {{> "dnd5e.item-summary" ctx.expanded }}
+                        {{/if}}
+                      </div>
                     </div>
                   </li>
                   {{/dnd5e-itemContext}}
@@ -360,6 +384,55 @@
             </div>
           </dnd5e-inventory>
         </div>
+
+        <div class="tab biography" data-group="primary" data-tab="biography">
+
+            {{#if editingDescriptionTarget}}
+
+            {{ editor enriched.editing target=editingDescriptionTarget button=false editable=true engine="prosemirror"
+                      collaborate=true }}
+
+            {{else}}
+
+            {{!-- Public Information --}}
+            <div class="middle" data-target="system.details.biography.public">
+
+                <h3 class="icon">
+                    <a class="editor-edit" data-action="editDescription"
+                      aria-label="{{ localize "DND5E.BiographyPublicEdit" }}">
+                        <i class="fas fa-feather"></i>
+                    </a>
+                    <dnd5e-icon src="systems/dnd5e/icons/svg/ink-pot.svg"></dnd5e-icon>
+                    <span class="roboto-upper">{{ localize "DND5E.Public" }}</span>
+                </h3>
+
+                <div class="editor">
+                    <div class="editor-content">{{{ enriched.public }}}</div>
+                </div>
+
+            </div>
+
+            {{!-- Details --}}
+            <div class="bottom" data-target="system.details.biography.value">
+
+                <h3 class="icon">
+                    <a class="editor-edit" data-action="editDescription" aria-label="{{ localize "DND5E.DetailsEdit" }}">
+                        <i class="fas fa-feather"></i>
+                    </a>
+                    <dnd5e-icon src="systems/dnd5e/icons/svg/ink-pot.svg"></dnd5e-icon>
+                    <span class="roboto-upper">{{ localize "DND5E.Details" }}</span>
+                </h3>
+
+                <div class="editor">
+                    <div class="editor-content">{{{ enriched.value }}}</div>
+                </div>
+
+            </div>
+
+            {{/if}}
+
+        </div>
+
       </section>
     </div>
   </section>

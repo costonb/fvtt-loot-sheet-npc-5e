@@ -6,11 +6,6 @@
 	background: none;
 }
 
-.loot-sheet-npc.sheet.actor.npc .sheet-header input {
-	background: none;
-	color: inherit;
-}
-
 :is(.dnd5e-theme-dark, .theme-dark) .loot-sheet-npc.sheet.actor.npc .ability-score > img, .loot-sheet-npc.sheet.actor.npc.dnd5e-theme-dark .ability-score > img {
     filter: invert(1);
 }
@@ -35,3 +30,59 @@
 	border: none;
     box-shadow: none;
 }
+
+:is(.dnd5e-theme-dark, .theme-dark) .loot-sheet-npc.sheet.actor.npc .window-content::before, 
+.loot-sheet-npc.sheet.actor.npc.dnd5e-theme-dark .window-content::before {
+	background: none;
+}
+
+:is(.dnd5e-theme-dark, .theme-dark) .loot-sheet-npc.sheet.actor.npc .window-content > form::before, 
+.loot-sheet-npc.sheet.actor.npc.dnd5e-theme-dark .window-content > form::before {
+	content: "";
+    position: absolute;
+    inset: 0 0 auto 0;
+    height: 300px;
+    border-radius: 5px 5px 0 0;
+    opacity: 0.2;
+    -webkit-mask-image: linear-gradient(to bottom, black, transparent);
+    mask-image: linear-gradient(to bottom, black, transparent);
+}
+
+:is(.dnd5e-theme-dark, .theme-dark) .loot-sheet-npc.sheet.actor.npc .window-content > form.type-Merchant::before, 
+.loot-sheet-npc.sheet.actor.npc.dnd5e-theme-dark .window-content > form.type-Merchant::before {
+	background: url(../images/bg-merchant.jpg) no-repeat bottom center / cover;
+}
+
+:is(.dnd5e-theme-dark, .theme-dark) .loot-sheet-npc.sheet.actor.npc .window-content > form.type-Loot::before, 
+.loot-sheet-npc.sheet.actor.npc.dnd5e-theme-dark .window-content > form.type-Loot::before {
+	background: url(../images/bg-loot.jpg) no-repeat bottom center / cover;
+}
+
+/* .loot-sheet-npc .mode-slider, */
+.loot-sheet-npc .header-elements,
+.loot-sheet-npc .preparation-warnings {
+	display: none !important;
+}
+
+.loot-sheet-npc.sheet.actor.npc .sheet-header .right,
+.loot-sheet-npc.sheet.actor.npc .sheet-header .left {
+	z-index: 2;
+}
+
+.loot-sheet-npc.sheet.actor.npc .sheet-header input {
+	background: rgba(0, 0, 0, 0.45);
+}
+
+.loot-sheet-npc .tab-body {
+	z-index: 3;
+}
+
+/* .loot-sheet-npc nav.tabs .item i:first-of-type {
+    display: none; /* Hides the first icon */
+}
+
+.loot-sheet-npc nav.tabs .item:first-of-type::before {
+    content: '\f03a'; /* Unicode of the new icon */
+    font-family: 'FontAwesome'; /* Set the correct font if necessary */
+    /* Additional styles to adjust position, size, etc. */
+} */
