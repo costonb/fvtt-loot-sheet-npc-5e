@@ -120,3 +120,7 @@
 .loot-sheet-npc .item-lootall {
 	color: var(--color-text-light-6) !important;
 }
+
+.loot-sheet-npc header.window-header.flexrow.draggable.resizable {
+	margin: 0 !important;
+}
