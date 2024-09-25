@@ -77,12 +77,39 @@
 	z-index: 3;
 }
 
-/* .loot-sheet-npc nav.tabs .item i:first-of-type {
-    display: none; /* Hides the first icon */
+.loot-sheet-npc label.slide-toggle {
+	float: right;
 }
 
-.loot-sheet-npc nav.tabs .item:first-of-type::before {
-    content: '\f03a'; /* Unicode of the new icon */
-    font-family: 'FontAwesome'; /* Set the correct font if necessary */
-    /* Additional styles to adjust position, size, etc. */
-} */
+.loot-sheet-npc .flexrow {
+	margin-top: 0.3rem;
+	margin-bottom: 0.3rem;
+}
+
+.loot-sheet-npc .pills-group {
+	margin-bottom: 1rem;
+}
+
+.loot-sheet-npc .permissions-list {
+	margin: 0;
+    padding-left: 1rem;
+	list-style: none;
+}
+
+.loot-sheet-npc li.permission {
+	text-indent: -0.5rem;
+}
+
+.loot-sheet-npc button.update-inventory {
+	color: inherit;
+}
+
+.loot-sheet-npc .currency.false,
+.loot-sheet-npc .middle.false,
+.loot-sheet-npc .tab.biography.active.false {
+	margin-left: 196px;
+}
+
+.loot-sheet-npc .tab.inventory.active.false {
+	padding-left: 0 !important;
+}

@@ -114,42 +114,162 @@
 
   <section class="sheet-body">
     <div class="main-content">
+      {{#if @root.editable}}
       <div class="sidebar">
         <div class="pills-group">
-          <h3 class="icon">
-            <i class="fas fa-shoe-prints"></i>
-            <span class="roboto-upper">Speed</span>
+          <h3 class="icon" data-tooltip="{{localize 'LOOTSHEET.TypeOfSheetHelp'}}">
+            <i class="fas fa-id-card"></i>
+            <span class="roboto-upper">{{localize "LOOTSHEET.TypeOfSheetName"}}</span>
           </h3>
-          <ul class="pills"></ul>
+          <div class="flexrow">
+            <select class="sheet-type" name="system.flags.lootsheet-simple.lootsheettype">
+              {{#select system.flags.lootsheet-simple.lootsheettype}}
+              {{#ifeq lootsheettype "Merchant"}}
+              <option value="Loot" selected>{{localize "LOOTSHEET.Loot"}}</option>
+              {{else}}
+              <option value="Loot">{{localize "LOOTSHEET.Loot"}}</option>
+              {{/ifeq}}
+              {{#ifeq lootsheettype "Merchant"}}
+              <option value="Merchant" selected>{{localize "LOOTSHEET.Merchant"}}</option>
+              {{else}}
+              <option value="Merchant">{{localize "LOOTSHEET.Merchant"}}</option>
+              {{/ifeq}}
+              {{/select}}
+            </select>
+          </div>
         </div>
 
-        <div class="pills-group">
-          <h3 class="icon">
-            <i class="fas fa-briefcase"></i>
-            <span class="roboto-upper">Skills</span>
+        {{#ifeq lootsheettype "Merchant"}}
+        <div class="pills-group merchant-settings">
+          <h3 class="icon" data-tooltip="{{localize 'LOOTSHEET.MerchantSettingsInfo'}}">
+            <i class="fas fa-balance-scale"></i>
+            <span class="roboto-upper">{{localize 'LOOTSHEET.MerchantSettings'}}</span>
           </h3>
-          <ul class="pills"></ul>
+          <div>
+            <div class="flexrow">
+              <select
+                class="sheet-rolltable"
+                id="lootsheet-rolltable"
+                name="system.flags.lootsheet-simple.rolltable"
+              >
+                <!-- Placeholder option -->
+                <option value="" disabled>{{localize 'LOOTSHEET.RollableTable'}}</option>
+
+                <!-- Loop through rolltables -->
+                {{#each rolltables as |table|}}
+                <option value="{{
+                  table.name
+                }}"
+                {{#if (eq table.name ../selectedRollTable)
+
+
+                }}selected{{/if
+
+
+                }}>
+                {{
+                  table.name
+                }}
+
+                {{/each}}
+              </select>
+            </div>
+            <div class="flexrow">
+              <input name="system.flags.lootsheet-simple.shopQty" type="text" data-dtype="String"
+              placeholder="{{localize "LOOTSHEET.ShopFormula"}} e.g. 1d20" value="{{ shopQty }}" />
+            </div>
+            <div class="flexrow">
+              <input name="system.flags.lootsheet-simple.itemQty" type="text" data-dtype="String"
+              placeholder="{{localize "LOOTSHEET.ItemFormula"}} e.g. 1d4" value="{{ itemQty }}" />
+            </div>
+            <div class="flexrow">
+              <input name="system.flags.lootsheet-simple.itemQtyLimit" type="text"
+              data-dtype="String" placeholder="{{localize "LOOTSHEET.LimitQty"}} e.g. 10" value="{{
+                itemQtyLimit
+              }}" />
+            </div>
+
+            <div class="flexrow" style="margin-top: 0.5rem; margin-bottom: 0.5rem">
+              <label
+                class="clear-inventory slide-toggle"
+                name="system.flags.lootsheet-simple.clearInventory"
+              >
+                <input
+                  type="checkbox"
+                  name="system.flags.lootsheet-simple.clearInventory"
+                  {{
+                  checked
+                  clearInventory
+                  }}
+                />
+                {{#if clearInventory}}
+                {{localize "LOOTSHEET.ClearInventory"}}
+                <i class="fas fa-toggle-on"></i>
+                {{else}}
+                {{localize "LOOTSHEET.ClearInventory"}}
+                <i class="fas fa-toggle-off"></i>
+                {{/if}}
+              </label>
+            </div>
+          </div>
+
+          <div class="flexrow">
+            <button
+              type="button"
+              class="update-inventory"
+              type="update-inventory"
+              name="update-inventory"
+              id="update-inventory"
+              disabled
+            >
+              <i class="fas fa-balance-scale"></i> {{localize "LOOTSHEET.UpdateShop"}}
+            </button>
+          </div>
         </div>
+        {{/ifeq}}
 
         <div class="pills-group">
-          <h3 class="icon">
-            <i class="fas fa-eye"></i>
-            <span class="roboto-upper">Senses</span>
+          <h3 class="icon" data-tooltip="{{localize 'LOOTSHEET.PermissionInfo'}}">
+            <i class="fas fa-lock"></i>
+            <span class="roboto-upper">{{localize "LOOTSHEET.Permissions"}}</span>
           </h3>
-          <ul class="pills">
-            <li class="pill">
-              <span class="label">Passive Perception</span>
-              <span class="separator">|</span>
-              <span class="value">10</span>
-            </li>
-          </ul>
+          <div class="flexrow">
+            <input
+              type="hidden"
+              name="actor.flags.loot.playersPermission"
+              value="{{ actor.flags.loot.playersPermission }}"
+              data-dtype="Number"
+            />
+            <ol class="permissions-list">
+              {{#each actor.flags.loot.players as |player p|}}
+              <li class="permission" data-skill="{{ p }}">
+                <input
+                  type="hidden"
+                  name="{{ player.playerId }}"
+                  value="{{ player.lootPermission }}"
+                  data-dtype="Number"
+                  actor="{{ player.actorId }}"
+                />
+                <a class="permission-proficiency" title="{{ player.lootPermissionDescription }}"
+                  >{{{player.icon}}}</a
+                >
+                <span class="permission-name">{{ player.actor }} ({{ player.name }})</span>
+              </li>
+              {{/each}}
+            </ol>
+          </div>
         </div>
       </div>
+      {{/if}}
 
       <section class="tab-body">
-        <div class="tab inventory active" data-group="primary" data-tab="features">
+        <div
+          class="tab inventory active {{@root.editable}}"
+          data-group="primary"
+          data-tab="features"
+        >
           <dnd5e-inventory class="inventory-element" v2="">
-            <section class="currency">
+            <section class="currency {{@root.editable}}">
               <button
                 type="button"
                 class="item-action unbutton"
@@ -188,7 +308,7 @@
               {{/if}} {{/ifeq}}
             </section>
 
-            <div class="middle">
+            <div class="middle {{@root.editable}}">
               {{!-- Searching & Filtering --}}
               <item-list-controls
                 for="inventory"
@@ -274,7 +394,7 @@
 
                       {{!-- Item Quantity --}}
                       <div class="item-detail item-quantity">
-                        {{#if @root.owner}} {{#notequal item.type "container"}}
+                        {{#if @root.editable}} {{#notequal item.type "container"}}
                         <a
                           class="adjustment-button"
                           data-action="decrease"
@@ -283,6 +403,7 @@
                           <i class="fas fa-minus"></i>
                         </a>
                         {{/notequal}} {{/if}}
+                        {{#if @root.editable}}
                         <input
                           type="text"
                           value="{{ item.system.quantity }}"
@@ -293,7 +414,10 @@
                           pattern="[0-9+=\-]*"
                           min="0"
                         />
-                        {{#if @root.owner}} {{#notequal item.type "container"}}
+                        {{else}}
+                        <div class="item-detail">{{ item.system.quantity }}</div>
+                        {{/if}}
+                        {{#if @root.editable}} {{#notequal item.type "container"}}
                         <a
                           class="adjustment-button"
                           data-action="increase"
@@ -317,19 +441,27 @@
                       {{!-- Item Status --}}
                       <div class="item-detail item-controls">
                         {{#if @root.editable}}
-                          {{!-- Editing --}}
-                          <a class="item-control item-action" data-action="edit" data-tooltip="DND5E.ItemEdit"
-                              aria-label="{{ localize "DND5E.ItemEdit" }}">
-                              <i class="fas fa-pen-to-square"></i>
-                          </a>
+                        {{!-- Editing --}}
+                        <a
+                          class="item-control item-action"
+                          data-action="edit"
+                          data-tooltip="DND5E.ItemEdit"
+                          aria-label="{{ localize 'DND5E.ItemEdit' }}"
+                        >
+                          <i class="fas fa-pen-to-square"></i>
+                        </a>
 
-                          {{!-- Deleting --}}
-                          <a class="item-control item-action" data-action="delete" data-tooltip="DND5E.ItemDelete"
-                              aria-label="{{ localize "DND5E.ItemDelete" }}">
-                              <i class="fas fa-trash"></i>
-                          </a>
-                          {{/if}}
-                          
+                        {{!-- Deleting --}}
+                        <a
+                          class="item-control item-action"
+                          data-action="delete"
+                          data-tooltip="DND5E.ItemDelete"
+                          aria-label="{{ localize 'DND5E.ItemDelete' }}"
+                        >
+                          <i class="fas fa-trash"></i>
+                        </a>
+                        {{/if}}
+
                         {{!-- Expand/Collapse --}}
                         <a
                           class="item-control interface-only"
@@ -385,54 +517,54 @@
           </dnd5e-inventory>
         </div>
 
-        <div class="tab biography" data-group="primary" data-tab="biography">
+        <div class="tab biography {{@root.editable}}" data-group="primary" data-tab="biography">
+          {{#if editingDescriptionTarget}}
 
-            {{#if editingDescriptionTarget}}
-
-            {{ editor enriched.editing target=editingDescriptionTarget button=false editable=true engine="prosemirror"
+          {{ editor enriched.editing target=editingDescriptionTarget button=false editable=true engine="prosemirror"
                       collaborate=true }}
 
-            {{else}}
+          {{else}}
 
-            {{!-- Public Information --}}
-            <div class="middle" data-target="system.details.biography.public">
+          {{!-- Public Information --}}
+          <div class="middle" data-target="system.details.biography.public">
+            <h3 class="icon">
+              <a
+                class="editor-edit"
+                data-action="editDescription"
+                aria-label="{{ localize 'DND5E.BiographyPublicEdit' }}"
+              >
+                <i class="fas fa-feather"></i>
+              </a>
+              <dnd5e-icon src="systems/dnd5e/icons/svg/ink-pot.svg"></dnd5e-icon>
+              <span class="roboto-upper">{{ localize "DND5E.Public" }}</span>
+            </h3>
 
-                <h3 class="icon">
-                    <a class="editor-edit" data-action="editDescription"
-                      aria-label="{{ localize "DND5E.BiographyPublicEdit" }}">
-                        <i class="fas fa-feather"></i>
-                    </a>
-                    <dnd5e-icon src="systems/dnd5e/icons/svg/ink-pot.svg"></dnd5e-icon>
-                    <span class="roboto-upper">{{ localize "DND5E.Public" }}</span>
-                </h3>
-
-                <div class="editor">
-                    <div class="editor-content">{{{ enriched.public }}}</div>
-                </div>
-
+            <div class="editor">
+              <div class="editor-content">{{{ enriched.public }}}</div>
             </div>
+          </div>
 
-            {{!-- Details --}}
-            <div class="bottom" data-target="system.details.biography.value">
+          {{!-- Details --}}
+          <div class="bottom" data-target="system.details.biography.value">
+            <h3 class="icon">
+              <a
+                class="editor-edit"
+                data-action="editDescription"
+                aria-label="{{ localize 'DND5E.DetailsEdit' }}"
+              >
+                <i class="fas fa-feather"></i>
+              </a>
+              <dnd5e-icon src="systems/dnd5e/icons/svg/ink-pot.svg"></dnd5e-icon>
+              <span class="roboto-upper">{{ localize "DND5E.Details" }}</span>
+            </h3>
 
-                <h3 class="icon">
-                    <a class="editor-edit" data-action="editDescription" aria-label="{{ localize "DND5E.DetailsEdit" }}">
-                        <i class="fas fa-feather"></i>
-                    </a>
-                    <dnd5e-icon src="systems/dnd5e/icons/svg/ink-pot.svg"></dnd5e-icon>
-                    <span class="roboto-upper">{{ localize "DND5E.Details" }}</span>
-                </h3>
-
-                <div class="editor">
-                    <div class="editor-content">{{{ enriched.value }}}</div>
-                </div>
-
+            <div class="editor">
+              <div class="editor-content">{{{ enriched.value }}}</div>
             </div>
+          </div>
 
-            {{/if}}
-
+          {{/if}}
         </div>
-
       </section>
     </div>
   </section>

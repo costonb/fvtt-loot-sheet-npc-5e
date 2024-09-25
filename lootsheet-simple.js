@@ -72,8 +72,6 @@ class QuantityDialog extends Dialog {
   }
 }
 
-
-
 class LootSheet5eNPC extends dnd5e.applications.actor.ActorSheet5eNPC2 {
   static SOCKET = 'module.lootsheet-simple'
 
@@ -89,13 +87,13 @@ class LootSheet5eNPC extends dnd5e.applications.actor.ActorSheet5eNPC2 {
 
     Handlebars.registerHelper('ifnoteq', function (a, b, options) {
       if (a != b) {
-        return options.fn(this);
+        return options.fn(this)
       }
-      return options.inverse(this);
-    });
+      return options.inverse(this)
+    })
 
     Handlebars.registerHelper('debug', function (context) {
-      console.log('lootsheet debug', context);
+      console.log('lootsheet debug', context)
     })
 
     Handlebars.registerHelper('lootsheetprice', function (basePrice, modifier) {
@@ -262,6 +260,18 @@ class LootSheet5eNPC extends dnd5e.applications.actor.ActorSheet5eNPC2 {
 
       html.find('.merchant-settings').change((ev) => this._merchantSettingChange(ev))
       html.find('.update-inventory').click((ev) => this._merchantInventoryUpdate(ev))
+      html.find('.clear-inventory.slide-toggle').click((ev) => this._clearInventoryChange(ev))
+
+      const selectRollTable = document.getElementById('lootsheet-rolltable')
+      const buttonUpdateInventory = document.getElementById('update-inventory')
+
+      if (selectRollTable) {
+        buttonUpdateInventory.disabled = !selectRollTable.value
+        selectRollTable.addEventListener('change', function () {
+          // Enable the button only if the selected value is not blank
+          buttonUpdateInventory.disabled = !selectRollTable.value
+        })
+      }
     }
 
     // Split Coins
@@ -291,24 +301,33 @@ class LootSheet5eNPC extends dnd5e.applications.actor.ActorSheet5eNPC2 {
     html.find('.sheet-type').change((ev) => this._changeSheetType(ev, html))
 
     // Select the <nav> element and find all <a> elements inside it
-    const nav = $('.loot-sheet-npc nav.tabs');
-    const links = nav.find('a.item.control');
+    const nav = $('.loot-sheet-npc nav.tabs')
+    const links = nav.find('a.item.control')
 
-    // Move the second <a> to the first position
-    if (links.eq(1).length) {
-      links.eq(1).insertBefore(links.eq(0)); // Move the second <a> before the first <a>
+    // Check if the first tab's data-tab attribute is not "features"
+    if (links.first().attr('data-tooltip') !== 'DND5E.Inventory') {
+      // Move the second <a> to the first position
+      if (links.eq(1).length) {
+        links.eq(1).insertBefore(links.eq(0)) // Move the second <a> before the first <a>
+      }
+
+      // Move the fifth <a> to the second position
+      if (links.eq(4).length) {
+        links.eq(4).insertAfter(nav.find('a.item.control').first()) // Move the fifth <a> to after the new first <a>
+      }
+
+      // Remove the remaining <a> elements (original first, third, and fourth)
+      nav.find('a.item.control').slice(2).remove() // Remove from the third onward
+
+      // Set the data-tab attribute to features
+      nav.find('a.item.control').first().attr('data-tab', 'features')
+
+      // Check if no <li> elements have the 'active' class
+      if (!nav.find('a.active').length) {
+        // Add the "active" class to the new first <a> element if no other <li> is active
+        nav.find('a.item.control').first().addClass('active')
+      }
     }
-
-    // Move the fifth <a> to the second position
-    if (links.eq(4).length) {
-      links.eq(4).insertAfter(nav.find('a.item.control').first()); // Move the fifth <a> to after the new first <a>
-    }
-
-    // Remove the remaining <a> elements (original first, third, and fourth)
-    nav.find('a.item.control').slice(2).remove(); // Remove from the third onward
-
-    // Add the "active" class to the new first <a> element
-    nav.find('a.item.control').first().addClass('active').attr('data-tab', 'features');
 
     // Roll Table
     //html.find('.sheet-type').change(ev => this._changeSheetType(ev, html));
@@ -320,7 +339,7 @@ class LootSheet5eNPC extends dnd5e.applications.actor.ActorSheet5eNPC2 {
    * Handle merchant settings change
    * @private
    */
-  async _merchantSettingChange(event, html) {
+  async _merchantSettingChange(event) {
     event.preventDefault()
     // console.log("Loot Sheet | Merchant settings changed");
 
@@ -330,29 +349,58 @@ class LootSheet5eNPC extends dnd5e.applications.actor.ActorSheet5eNPC2 {
       'shopQty',
       'itemQty',
       'itemQtyLimit',
-      'clearInventory',
+      // 'clearInventory',
       'itemOnlyOnce',
     ]
 
     let targetKey = event.target.name.split('.')[3]
-
+    console.log(event)
     if (expectedKeys.indexOf(targetKey) === -1) {
       // console.log(`Loot Sheet | Error changing stettings for "${targetKey}".`);
       return ui.notifications.error(`Error changing stettings for "${targetKey}".`)
     }
 
     if (targetKey == 'clearInventory' || targetKey == 'itemOnlyOnce') {
-      // console.log(targetKey + " set to " + event.target.checked);
+      //console.log(targetKey + ' set to ' + event.target.checked)
       await this.actor.setFlag(moduleNamespace, targetKey, event.target.checked)
     } else if (event.target.value) {
-      // console.log(targetKey + " set to " + event.target.value);
-      // console.log("A");
+      //console.log(targetKey + ' set to ' + event.target.value)
       await this.actor.setFlag(moduleNamespace, targetKey, event.target.value)
     } else {
-      // console.log(targetKey + " set to " + event.target.value);
-      // console.log("B");
+      //console.log(targetKey + ' set to ' + event.target.value)
       await this.actor.unsetFlag(moduleNamespace, targetKey, event.target.value)
     }
+  }
+
+  /**
+   * Handle clear inventory settings change
+   * @private
+   */
+  async _clearInventoryChange(event) {
+    // Prevent default behavior of label-click that directly interacts with the checkbox
+    event.preventDefault()
+
+    const clickedElement = $(event.currentTarget)
+
+    // Find the checkbox and icon within the label
+    const checkbox = clickedElement.find('input[type="checkbox"]')[0]
+    const icon = clickedElement.find('i')[0]
+
+    // Toggle the checkbox checked state
+    checkbox.checked = !checkbox.checked
+
+    // Update the icon class based on the checkbox state
+    if (checkbox.checked) {
+      icon.classList.remove('fa-toggle-off')
+      icon.classList.add('fa-toggle-on')
+    } else {
+      icon.classList.remove('fa-toggle-on')
+      icon.classList.add('fa-toggle-off')
+    }
+
+    // console.log("Loot Sheet | ClearInventory Changed");
+
+    await this.actor.setFlag('lootsheet-simple', 'clearInventory', checkbox.checked)
   }
 
   /* -------------------------------------------- */
@@ -391,8 +439,6 @@ class LootSheet5eNPC extends dnd5e.applications.actor.ActorSheet5eNPC2 {
     }
 
     if (clearInventory) {
-      confirm
-      console.log(this.actor)
       let currentItems = this.actor.items.map((i) => i.id)
       await this.actor.deleteEmbeddedDocuments('Item', currentItems)
     }
@@ -1016,7 +1062,7 @@ class LootSheet5eNPC extends dnd5e.applications.actor.ActorSheet5eNPC2 {
     let playerId = field[0].name
 
     this._updatePermissions(this.actor, playerId, newLevel, event)
-    console.log('here?')
+
     this._onSubmit(event)
   }
 
@@ -1050,14 +1096,14 @@ class LootSheet5eNPC extends dnd5e.applications.actor.ActorSheet5eNPC2 {
     }
     const lootPermissions = new DocumentOwnershipConfig(this.actor)
     lootPermissions._updateObject(event, currentPermissions)
-    console.log('here?')
+
     this._onSubmit(event)
   }
 
   _updatePermissions(actorData, playerId, newLevel, event) {
     // Read player permission on this actor and adjust to new level
     let currentPermissions = foundry.utils.duplicate(actorData.ownership)
-    console.log(currentPermissions)
+
     currentPermissions[playerId] = newLevel
     // Save updated player permissions
     const lootPermissions = new DocumentOwnershipConfig(this.actor)
@@ -1074,10 +1120,8 @@ class LootSheet5eNPC extends dnd5e.applications.actor.ActorSheet5eNPC2 {
   //   super._prepareItems(context);
   // }
   _prepareItems(context) {
-    super._prepareItems(context);
-    
+    super._prepareItems(context)
   }
-
 
   /* -------------------------------------------- */
 
@@ -1157,7 +1201,6 @@ Actors.registerSheet('dnd5e', LootSheet5eNPC, {
 })
 
 Hooks.once('init', () => {
-  // console.log("Lootsheet: Test2");
   Handlebars.registerHelper('ifeq', function (a, b, options) {
     if (a == b) {
       return options.fn(this)
