@@ -12,6 +12,7 @@
     "LOOTSHEET.TypeOfSheet":"Type of sheet:",
     "LOOTSHEET.PriceModifier":"Price Modifier",
     "LOOTSHEET.LootAll":"Loot All",
+    "LOOTSHEET.LootCoins":"Loot Coins",
     "LOOTSHEET.GMSettings":"GM Settings",
     "LOOTSHEET.TypeOfSheetHelp":"Loot: allows for looting of items and coins.\nMerchant: allows players to purchase items directly from the sheet.",
     "LOOTSHEET.MerchantSettings":"Merchant Settings",

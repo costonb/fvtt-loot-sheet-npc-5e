@@ -41,11 +41,7 @@
         <div class="right">
           <div class="left">
             <div class="sheet-header-buttons">
-              {{#ifeq lootsheettype "Loot"}} {{#if lootAll}}
-              <!-- <div class="charbutton">
-                          <button type="button" class="loot-all" name="loot-all" value="1"><i class="fas fa-gem"></i> Loot All</button>
-                      </div> -->
-              {{/if}} {{/ifeq}} {{#if isGM}} {{#ifeq lootsheettype "Merchant"}}
+              {{#if isGM}} {{#ifeq lootsheettype "Merchant"}}
               <button
                 type="button"
                 class="price-modifier gold-button"
@@ -183,7 +179,9 @@
 
 
 
+
                 }}selected{{/if
+
 
 
 
@@ -428,8 +426,8 @@
                         >
                           <i class="fas fa-minus"></i>
                         </a>
-                        {{/notequal}} {{/if}}
-                        {{#if @root.editable}}
+                        {{/notequal}} {{/if}} {{#if @root.editable}}
+                        {{#notequal item.type "container"}}
                         <input
                           type="text"
                           value="{{ item.system.quantity }}"
@@ -440,6 +438,9 @@
                           pattern="[0-9+=\-]*"
                           min="0"
                         />
+                        {{else}}
+                        <div class="item-detail">{{ item.system.quantity }}</div>
+                        {{/notequal}}
                         {{else}}
                         <div class="item-detail">{{ item.system.quantity }}</div>
                         {{/if}}

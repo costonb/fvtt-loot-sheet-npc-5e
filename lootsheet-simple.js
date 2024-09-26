@@ -299,7 +299,7 @@ class LootSheet5eNPC extends dnd5e.applications.actor.ActorSheet5eNPC2 {
     html.find('.item-lootall').click((ev) => this._lootItem(ev, 1))
 
     // Loot Currency
-    html.find('.currency-loot').click((ev) => this._lootCoins(ev))
+    html.find('.currency-loot').removeAttr('disabled').click((ev) => this._lootCoins(ev))
 
     // Loot All
     html
