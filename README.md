@@ -22,7 +22,7 @@ Permissions can be set in the sheet for each player and range from no access (ca
 ##### Shopkeeper Sheet
 Can be used to create an inventory of a shopkeeper to allow players to peruse their inventory. Prices are listed next to each item.
 
-![demo_inventory](https://raw.githubusercontent.com/jopeek/fvtt-loot-sheet-npc-5e/master/images/demo_inventory.jpg)
+https://raw.githubusercontent.com/jopeek/fvtt-loot-sheet-npc-5e/refs/heads/lootsheet-simple/images/Screenshot%202024-09-25%20190208.png
 
 ##### Price Modifier
 Prices can be adjusted by percentage for all owned items.
