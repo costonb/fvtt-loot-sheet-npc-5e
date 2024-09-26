@@ -14,18 +14,12 @@ This version was forked from Hooking's module which ended compatibility with Fou
 
 I will only maintain a DND5e compatible version of this mod, but I encourage forks for other systems as well as accept pull requests and contributions for this one. I'm very busy and appreciate all current and future contributors!
 
-##### Permissions
-Permissions can be set in the sheet for each player and range from no access (cannot open sheet) to observer (view sheet and contents and utilize loot or buy buttons) to owner (view sheet and add/remove items and configure sheet).
+##### Screenshots
 
-[Screenshot](https://raw.githubusercontent.com/jopeek/fvtt-loot-sheet-npc-5e/refs/heads/lootsheet-simple/images/Screenshot%202024-09-25%20190208.png)
-
-### Installation Instructions
-
-To install a module, follow these instructions:
-
-1. Start FVTT and browse to the Game Modules tab in the Configuration and Setup menu
-2. Select the Install Module button and enter the following URL: https://raw.githubusercontent.com/jopeek/fvtt-loot-sheet-npc-5e/master/module.json
-3. Click Install and wait for installation to complete 
+![Screenshot](https://raw.githubusercontent.com/jopeek/fvtt-loot-sheet-npc-5e/refs/heads/lootsheet-simple/images/Screenshot%202024-09-25%20190208.png)
+![Screenshot](https://github.com/jopeek/fvtt-loot-sheet-npc-5e/blob/lootsheet-simple/images/Screenshot%202024-09-25%20190214.png?raw=true)
+![Screenshot](https://github.com/jopeek/fvtt-loot-sheet-npc-5e/blob/lootsheet-simple/images/Screenshot%202024-09-25%20190222.png?raw=true)
+![Screenshot](https://github.com/jopeek/fvtt-loot-sheet-npc-5e/blob/lootsheet-simple/images/Screenshot%202024-09-25%20190232.png?raw=true)
 
 ### Feedback
 
