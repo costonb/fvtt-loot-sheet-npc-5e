@@ -8,15 +8,11 @@ A loot sheet allows players with the right permissions to loot items from it, wh
 
 ### History
 
+The latest version is based on the dnd5e 3.0 NPC sheet and thus requires at least version 3.0.0 of that system.
+
 This version was forked from Hooking's module which ended compatibility with Foundry VTT version 0.3.9 (https://gitlab.com/hooking/foundry-vtt---loot-sheet-npc). This fork should be updated by me to keep it current with Foundry VTT.
 
 I will only maintain a DND5e compatible version of this mod, but I encourage forks for other systems as well as accept pull requests and contributions for this one. I'm very busy and appreciate all current and future contributors!
-
-### Features
-
-Allows for easy assembly of items and coins to be distributed to players.
-
-More features detailed below.
 
 ##### Permissions
 Permissions can be set in the sheet for each player and range from no access (cannot open sheet) to observer (view sheet and contents and utilize loot or buy buttons) to owner (view sheet and add/remove items and configure sheet).
