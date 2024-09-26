@@ -299,7 +299,10 @@ class LootSheet5eNPC extends dnd5e.applications.actor.ActorSheet5eNPC2 {
     html.find('.item-lootall').click((ev) => this._lootItem(ev, 1))
 
     // Loot Currency
-    html.find('.currency-loot').removeAttr('disabled').click((ev) => this._lootCoins(ev))
+    html
+      .find('.currency-loot')
+      .removeAttr('disabled')
+      .click((ev) => this._lootCoins(ev))
 
     // Loot All
     html
@@ -1328,6 +1331,7 @@ Hooks.once('init', () => {
     const updates = []
     const deletes = []
     const additions = []
+    const containers = []
     const destUpdates = []
     const results = []
     for (let i of items) {
@@ -1343,53 +1347,94 @@ Hooks.once('init', () => {
         quantity = item.system.quantity
       }
 
-      //let newItem = foundry.utils.duplicate(item);
-      let newItem = foundry.utils.duplicate(item)
-      // console.log("NEWITEM: \n");
-      // console.log(newItem);
-
-      const update = {
-        _id: itemId,
-        'system.quantity': item.system.quantity - quantity,
-      }
-
-      // console.log("UPDATE: \n");
-      // console.log(update);
-
-      if (update['system.quantity'] === 0) {
-        deletes.push(itemId)
+      // If container, just move the container
+      if (item.type === 'container') {
+        containers.push(item)
       } else {
-        updates.push(update)
+        let newItem = item.clone()
+
+        const update = {
+          _id: itemId,
+          'system.quantity': item.system.quantity - quantity,
+        }
+
+        if (update['system.quantity'] === 0) {
+          deletes.push(itemId)
+        } else {
+          updates.push(update)
+        }
+
+        newItem.system.quantity = quantity
+
+        results.push({
+          item: newItem,
+          quantity: quantity,
+        })
+
+        additions.push(newItem)
       }
-
-      newItem.system.quantity = quantity
-      // console.log("NEWITEM2: \n");
-      // console.log(newItem);
-
-      results.push({
-        item: newItem,
-        quantity: quantity,
-      })
-      /* let destItem = destination.system.items.find(i => i.name == newItem.name);
-			// console.log("DESTITEM: \n"); 
-			// console.log(destItem); */
-      additions.push(newItem)
-      /* if (destItem === undefined) {
-                additions.push(newItem);
-            } else {
-                // console.log("Existing Item");
-				newItem.system.quantity = Number(destitem.system.quantity) + Number(newItem.system.quantity);
-				additions.push(newItem);
-				
-            } */
-    }
-
-    if (deletes.length > 0) {
-      await source.deleteEmbeddedDocuments('Item', deletes)
     }
 
     if (updates.length > 0) {
       await source.updateEmbeddedDocuments('Item', updates)
+    }
+
+    if (containers.length > 0) {
+      // Containers are different!
+      // We have to first look through their contents, create each of those items on the destination
+      // Then create a new container and link those items to that
+      // We do that by setting the system.container property to the ID of the container on each item that goes into it
+
+      for (const container of containers) {
+        const newContainers = []
+        const newitemsInContainer = []
+        const sourceItemsToDelete = []
+
+        newContainers.push(container)
+
+        let newContainer = await destination.createEmbeddedDocuments('Item', newContainers)
+        // console.log("Loot Sheet | Created new container", newContainer)
+
+        const items = container.system.contents;
+      
+        try {
+          const itemsArray = Array.from(items);
+          
+          itemsArray.forEach(async (item, index) => {
+            // console.log(`Loot Sheet | Inside container, found Id: ${item.id}, Name: ${item.name}, Type: ${item.type}`);
+            // console.log(`Loot Sheet | Inside container, found item: ${index}`, item);
+           
+            newitemsInContainer.push(item)
+            sourceItemsToDelete.push(item.id)
+            
+          });
+        } catch (error) {
+          console.log('Failed to convert items to array:', error);
+        }
+
+        // console.log("Loot Sheet | List of items to add", newitemsInContainer)
+
+        let newitemInContainer = await destination.createEmbeddedDocuments('Item', newitemsInContainer)
+        
+        // console.log("Loot Sheet | Created items", newitemInContainer)
+       
+        for (const itemToMove of newitemInContainer) {
+          itemToMove.update({"system.container": newContainer[0].id})
+          .then(() => {
+            console.log(`Item "${itemToMove.name}" successfully moved into container "${newContainer[0].id}"`);
+          })
+          .catch(error => {
+            console.error("Error moving item:", error);
+          });
+        }
+
+        // Remove the items that were in the container from source
+        // Remove the source container
+        await source.deleteEmbeddedDocuments('Item', sourceItemsToDelete)
+        await source.deleteEmbeddedDocuments('Item', [container.id])
+      
+      }
+      
     }
 
     if (additions.length > 0) {
@@ -1398,6 +1443,10 @@ Hooks.once('init', () => {
 
     if (destUpdates.length > 0) {
       await destination.updateEmbeddedDocuments('Item', destUpdates)
+    }
+
+    if (deletes.length > 0) {
+      await source.deleteEmbeddedDocuments('Item', deletes)
     }
 
     return results
