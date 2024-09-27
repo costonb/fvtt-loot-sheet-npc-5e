@@ -1385,56 +1385,7 @@ Hooks.once('init', () => {
       // Then create a new container and link those items to that
       // We do that by setting the system.container property to the ID of the container on each item that goes into it
 
-      for (const container of containers) {
-        const newContainers = []
-        const newitemsInContainer = []
-        const sourceItemsToDelete = []
-
-        newContainers.push(container)
-
-        let newContainer = await destination.createEmbeddedDocuments('Item', newContainers)
-        // console.log("Loot Sheet | Created new container", newContainer)
-
-        const items = container.system.contents;
-      
-        try {
-          const itemsArray = Array.from(items);
-          
-          itemsArray.forEach(async (item, index) => {
-            // console.log(`Loot Sheet | Inside container, found Id: ${item.id}, Name: ${item.name}, Type: ${item.type}`);
-            // console.log(`Loot Sheet | Inside container, found item: ${index}`, item);
-           
-            newitemsInContainer.push(item)
-            sourceItemsToDelete.push(item.id)
-            
-          });
-        } catch (error) {
-          console.log('Failed to convert items to array:', error);
-        }
-
-        // console.log("Loot Sheet | List of items to add", newitemsInContainer)
-
-        let newitemInContainer = await destination.createEmbeddedDocuments('Item', newitemsInContainer)
-        
-        // console.log("Loot Sheet | Created items", newitemInContainer)
-       
-        for (const itemToMove of newitemInContainer) {
-          itemToMove.update({"system.container": newContainer[0].id})
-          .then(() => {
-            console.log(`Item "${itemToMove.name}" successfully moved into container "${newContainer[0].id}"`);
-          })
-          .catch(error => {
-            console.error("Error moving item:", error);
-          });
-        }
-
-        // Remove the items that were in the container from source
-        // Remove the source container
-        await source.deleteEmbeddedDocuments('Item', sourceItemsToDelete)
-        await source.deleteEmbeddedDocuments('Item', [container.id])
-      
-      }
-      
+      copyAllContainers(containers, destination, source);
     }
 
     if (additions.length > 0) {
@@ -1450,6 +1401,66 @@ Hooks.once('init', () => {
     }
 
     return results
+  }
+
+  async function copyContainerAndContents(container, destination, source) {
+    // Array to store new containers and items created in the destination
+    const newContainers = [container]
+    const sourceItemsToDelete = []
+
+    // Create a new container in the destination
+    const newContainer = await destination.createEmbeddedDocuments('Item', newContainers)
+    // console.log('Loot Sheet | Created new container', newContainer)
+
+    // Process each item in the container
+    await processItems(
+      container.system.contents,
+      newContainer[0],
+      destination,
+      source,
+      sourceItemsToDelete,
+    )
+
+    // Remove the items and the source container from the source
+    await source.deleteEmbeddedDocuments('Item', sourceItemsToDelete)
+    await source.deleteEmbeddedDocuments('Item', [container.id])
+  }
+
+  async function processItems(items, parentContainer, destination, source, sourceItemsToDelete) {
+    try {
+      const itemsArray = Array.from(items)
+
+      // Iterate through each item in the container
+      for (const item of itemsArray) {
+        // Check if the item is a container itself
+        if (item.type === 'container') {
+          // Recursively copy the nested container and its contents
+          await copyContainerAndContents(item, destination, source)
+        } else {
+          // If it's a regular item, prepare to copy it
+          const newItem = { ...item }
+          newItem.system.container = parentContainer.id // Link the item to the new container
+
+          // Create the item in the destination
+          const newItemInContainer = await destination.createEmbeddedDocuments('Item', [newItem])
+          // console.log(
+          //   `Loot Sheet | Created item "${newItemInContainer[0].name}" inside container "${parentContainer.id}"`,
+          // )
+
+          // Update the item's container reference
+          await newItemInContainer[0].update({ 'system.container': parentContainer.id })
+          sourceItemsToDelete.push(item.id) // Track the original item for deletion
+        }
+      }
+    } catch (error) {
+      console.log('Failed to process items:', error)
+    }
+  }
+
+  async function copyAllContainers(containers, destination, source) {
+    for (const container of containers) {
+      await copyContainerAndContents(container, destination, source)
+    }
   }
 
   async function lootItems(container, looter, items) {
