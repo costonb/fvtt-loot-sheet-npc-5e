@@ -418,7 +418,7 @@
 
                       {{!-- Item Quantity --}}
                       <div class="item-detail item-quantity">
-                        {{#if @root.editable}} {{#notequal item.type "container"}}
+                         {{#notequal item.type "container"}}
                         <a
                           class="adjustment-button"
                           data-action="decrease"
@@ -426,7 +426,7 @@
                         >
                           <i class="fas fa-minus"></i>
                         </a>
-                        {{/notequal}} {{/if}} {{#if @root.editable}}
+                        {{/notequal}} 
                         {{#notequal item.type "container"}}
                         <input
                           type="text"
@@ -441,10 +441,7 @@
                         {{else}}
                         <div class="item-detail">{{ item.system.quantity }}</div>
                         {{/notequal}}
-                        {{else}}
-                        <div class="item-detail">{{ item.system.quantity }}</div>
-                        {{/if}}
-                        {{#if @root.editable}} {{#notequal item.type "container"}}
+                        {{#notequal item.type "container"}}
                         <a
                           class="adjustment-button"
                           data-action="increase"
@@ -452,7 +449,7 @@
                         >
                           <i class="fas fa-plus"></i>
                         </a>
-                        {{/notequal}} {{/if}}
+                        {{/notequal}}
                       </div>
 
                       {{!-- Item Price --}}

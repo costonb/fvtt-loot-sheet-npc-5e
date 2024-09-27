@@ -1351,7 +1351,7 @@ Hooks.once('init', () => {
       if (item.type === 'container') {
         containers.push(item)
       } else {
-        let newItem = item.clone()
+        let newItem = foundry.utils.duplicate(item)
 
         const update = {
           _id: itemId,
@@ -1627,7 +1627,6 @@ Hooks.once('init', () => {
               }
               buyerFunds[coin] += payedCoin
               sellerFunds[coin] -= payedCoin
-              console.log(itemCostInBronze)
             }
             if (iteration > 6) {
               break trychange
