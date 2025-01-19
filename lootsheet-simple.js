@@ -26,6 +26,84 @@ class LootSheet5eNPCHelper {
     })
     return currency
   }
+
+  /**
+   * Shared code for distributing coins so it can be called both from socket and as GM
+   * @param {Actor5e} containerActor - The actor who is initiating the distribution of coins
+   * @returns 
+   */
+  static distributeCoins(containerActor) {
+    let observers = []
+    let players = game.users.players
+
+    // Calculate observers
+    for (let player of players) {
+      let playerPermission = LootSheet5eNPCHelper.getLootPermissionForPlayer(containerActor, player)
+      if (player != 'default' && playerPermission >= 2) {
+        if (player.character != null && (player.role === 1 || player.role === 2))
+          observers.push(player.character)
+      }
+    }
+
+    if (observers.length === 0) return
+
+    // Calculate split of currency
+    let currencySplit = foundry.utils.duplicate(
+      LootSheet5eNPCHelper.convertCurrencyFromObject(containerActor.system.currency),
+    )
+
+    // keep track of the remainder
+    let currencyRemainder = {}
+
+    for (let c in currencySplit) {
+      if (observers.length) {
+        // calculate remainder
+        currencyRemainder[c] = currencySplit[c] % observers.length
+
+        currencySplit[c] = Math.floor(currencySplit[c] / observers.length)
+      } else currencySplit[c] = 0
+    }
+
+    // add currency to actors existing coins
+    let msg = []
+    for (let u of observers) {
+      if (u === null) continue
+
+      msg = []
+      let currency = LootSheet5eNPCHelper.convertCurrencyFromObject(u.system.currency),
+        newCurrency = foundry.utils.duplicate(
+          LootSheet5eNPCHelper.convertCurrencyFromObject(u.system.currency),
+        )
+
+      for (let c in currency) {
+        // add msg for chat description
+        if (currencySplit[c]) {
+          msg.push(` ${currencySplit[c]} ${c} coins`)
+        }
+          // Add currency to permitted actor
+          newCurrency[c] = parseInt(currency[c] || 0) + (currencySplit[c] ?? 0)
+      }
+      u.update({
+        'system.currency': newCurrency,
+      })
+
+      // Create chat message for coins received
+      if (msg.length != 0) {
+        let message = `${u.name} receives: `
+        message += msg.join(',')
+        ChatMessage.create({
+          user: game.user._id,
+          speaker: {
+            actor: containerActor,
+            alias: containerActor.name,
+          },
+          content: message,
+        })
+      }
+    }
+    // Remove currency from loot actor.
+    containerActor.update({'system.currency': currencyRemainder})
+  }
 }
 
 class QuantityDialog extends Dialog {
@@ -925,6 +1003,9 @@ class LootSheet5eNPC extends dnd5e.applications.actor.ActorSheet5eNPC2 {
    */
   _distributeCoins(event) {
     event.preventDefault()
+    if (!game.settings.get('lootsheet-simple', 'lootCurrency')) {
+      return
+    }
 
     let targetGm = null
     game.users.forEach((u) => {
@@ -942,11 +1023,14 @@ class LootSheet5eNPC extends dnd5e.applications.actor.ActorSheet5eNPC2 {
     if (this.token === null) {
       return ui.notifications.error(`You must loot items from a token.`)
     }
+    if (!game.user.character) {
+      return ui.notifications.error(`No active character for user.`)
+    }
 
     if (game.user.isGM) {
       //don't use socket
       let container = canvas.tokens.get(this.token.id)
-      this._hackydistributeCoins(container.actor)
+      LootSheet5eNPCHelper.distributeCoins(container.actor)
       return
     }
 
@@ -958,99 +1042,6 @@ class LootSheet5eNPC extends dnd5e.applications.actor.ActorSheet5eNPC2 {
     }
     console.log('Loot Sheet | Sending distribute coins request to ' + targetGm.name, packet)
     game.socket.emit(LootSheet5eNPC.SOCKET, packet)
-  }
-
-  _hackydistributeCoins(containerActor) {
-    //This is identical as the distributeCoins function defined in the init hook which for some reason can't be called from the above _distributeCoins method of the lootsheet-simple class. I couldn't be bothered to figure out why a socket can't be called as the GM... so this is a hack but it works.
-    let actorData = containerActor.system
-    let observers = []
-    let players = game.users.players
-
-    // Calculate observers
-    for (let player of players) {
-      let playerPermission = LootSheet5eNPCHelper.getLootPermissionForPlayer(actorData, player)
-      if (player != 'default' && playerPermission >= 2) {
-        let actor = game.actors.get(player.system.character)
-        if (actor != null && (player.system.role === 1 || player.system.role === 2))
-          observers.push(actor)
-      }
-    }
-
-    if (observers.length === 0) return
-
-    // Calculate split of currency
-    let currencySplit = foundry.utils.duplicate(
-      LootSheet5eNPCHelper.convertCurrencyFromObject(containerActor.system.currency),
-    )
-
-    // keep track of the remainder
-    let currencyRemainder = {}
-
-    for (let c in currencySplit) {
-      if (observers.length) {
-        // calculate remainder
-        currencyRemainder[c] = currencySplit[c] % observers.length
-
-        currencySplit[c] = Math.floor(currencySplit[c] / observers.length)
-      } else currencySplit[c] = 0
-    }
-
-    // add currency to actors existing coins
-    let msg = []
-    for (let u of observers) {
-      if (u === null) continue
-
-      msg = []
-      let currency = LootSheet5eNPCHelper.convertCurrencyFromObject(u.system.currency),
-        newCurrency = foundry.utils.duplicate(
-          LootSheet5eNPCHelper.convertCurrencyFromObject(u.system.currency),
-        )
-
-      for (let c in currency) {
-        // add msg for chat description
-        if (currencySplit[c]) {
-          msg.push(` ${currencySplit[c]} ${c} coins`)
-        }
-        if (currencySplit[c] != null) {
-          // Add currency to permitted actor
-          newCurrency[c] = parseInt(currency[c] || 0) + currencySplit[c]
-          u.update({
-            'system.currency': newCurrency,
-          })
-        }
-      }
-
-      // Remove currency from loot actor.
-      let lootCurrency = LootSheet5eNPCHelper.convertCurrencyFromObject(
-          containerActor.system.currency,
-        ),
-        zeroCurrency = {}
-
-      for (let c in lootCurrency) {
-        zeroCurrency[c] = {
-          type: currencySplit[c].type,
-          label: currencySplit[c].type,
-          value: currencyRemainder[c],
-        }
-        containerActor.update({
-          'system.currency': zeroCurrency,
-        })
-      }
-
-      // Create chat message for coins received
-      if (msg.length != 0) {
-        let message = `${u.name} receives: `
-        message += msg.join(',')
-        ChatMessage.create({
-          user: game.user._id,
-          speaker: {
-            actor: containerActor,
-            alias: containerActor.name,
-          },
-          content: message,
-        })
-      }
-    }
   }
 
   /* -------------------------------------------- */
@@ -1675,98 +1666,6 @@ Hooks.once('init', () => {
     }
   }
 
-  function distributeCoins(containerActor) {
-    let actorData = containerActor.system
-    let observers = []
-    let players = game.users.players
-
-    // Calculate observers
-    for (let player of players) {
-      let playerPermission = LootSheet5eNPCHelper.getLootPermissionForPlayer(actorData, player)
-      if (player != 'default' && playerPermission >= 2) {
-        let actor = game.actors.get(player.system.character)
-        if (actor != null && (player.system.role === 1 || player.system.role === 2))
-          observers.push(actor)
-      }
-    }
-
-    if (observers.length === 0) return
-
-    // Calculate split of currency
-    let currencySplit = foundry.utils.duplicate(
-      LootSheet5eNPCHelper.convertCurrencyFromObject(containerActor.system.currency),
-    )
-
-    // keep track of the remainder
-    let currencyRemainder = {}
-
-    for (let c in currencySplit) {
-      if (observers.length) {
-        // calculate remainder
-        currencyRemainder[c] = currencySplit[c] % observers.length
-
-        currencySplit[c] = Math.floor(currencySplit[c] / observers.length)
-      } else currencySplit[c] = 0
-    }
-
-    // add currency to actors existing coins
-    let msg = []
-    for (let u of observers) {
-      if (u === null) continue
-
-      msg = []
-      let currency = LootSheet5eNPCHelper.convertCurrencyFromObject(u.system.currency),
-        newCurrency = foundry.utils.duplicate(
-          LootSheet5eNPCHelper.convertCurrencyFromObject(u.system.currency),
-        )
-
-      for (let c in currency) {
-        // add msg for chat description
-        if (currencySplit[c]) {
-          msg.push(` ${currencySplit[c]} ${c} coins`)
-        }
-
-        // Add currency to permitted actor
-        newCurrency[c] = parseInt(currency[c] || 0) + currencySplit[c]
-
-        u.update({
-          'system.currency': newCurrency,
-        })
-      }
-
-      // Remove currency from loot actor.
-      let lootCurrency = LootSheet5eNPCHelper.convertCurrencyFromObject(
-          containerActor.system.currency,
-        ),
-        zeroCurrency = {}
-
-      for (let c in lootCurrency) {
-        zeroCurrency[c] = {
-          type: currencySplit[c].type,
-          label: currencySplit[c].type,
-          value: currencyRemainder[c],
-        }
-        containerActor.update({
-          'system.currency': zeroCurrency,
-        })
-      }
-
-      // Create chat message for coins received
-      if (msg.length != 0) {
-        let message = `${u.name} receives: `
-        message += msg.join(',')
-        ChatMessage.create({
-          user: game.user._id,
-          speaker: {
-            actor: containerActor,
-            alias: containerActor.name,
-          },
-          content: message,
-        })
-      }
-    }
-  }
-
   function lootCoins(containerActor, looter) {
     let sheetCurrency = LootSheet5eNPCHelper.convertCurrencyFromObject(
       containerActor.system.currency,
@@ -1865,7 +1764,7 @@ Hooks.once('init', () => {
             'Player attempted to distribute coins on a different scene.',
           )
         }
-        distributeCoins(container.actor)
+        LootSheet5eNPCHelper.distributeCoins(container.actor)
       }
 
       if (data.type === 'lootCoins') {
