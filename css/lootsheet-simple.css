@@ -116,6 +116,8 @@
 
 .loot-sheet-npc .item-buy,
 .loot-sheet-npc .item-buyall,
+.loot-sheet-npc .item-sell,
+.loot-sheet-npc .item-sellall,
 .loot-sheet-npc .item-loot,
 .loot-sheet-npc .item-lootall {
 	color: var(--color-text-light-6) !important;

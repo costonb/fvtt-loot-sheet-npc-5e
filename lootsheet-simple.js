@@ -241,12 +241,23 @@ class LootSheet5eNPC extends dnd5e.applications.actor.ActorSheet5eNPC2 {
       sheetData.system.currency,
     )
 
+    sheetData.playerInventory = this._inventoryForCharacter(game.user.character)
+
     // console.log("sheetdata", sheetData);
     // console.log("this actor", this.actor);
 
     // Return data for rendering
     return sheetData
   }
+
+
+  /** @override */
+  static TABS = [
+    { tab: "features", label: "DND5E.FACILITY.Trade.Buy.Supplement", svg: "backpack" },
+    { tab: "playerInventory", label: "DND5E.FACILITY.Trade.Sell.Supplement", svg: "backpack" },
+    { tab: "biography", label: "DND5E.Biography", icon: "fas fa-feather" },
+  ];
+
 
   /* -------------------------------------------- */
   /*  Event Listeners and Handlers
@@ -292,11 +303,15 @@ class LootSheet5eNPC extends dnd5e.applications.actor.ActorSheet5eNPC2 {
 
     // Buy Item
     html.find('.item-buy').click((ev) => this._buyItem(ev))
-    html.find('.item-buyall').click((ev) => this._buyItem(ev, 1))
+    html.find('.item-buyall').click((ev) => this._buyItem(ev, true))
+
+    // Sell Item
+    html.find('.item-sell').click((ev) => this._sellItem(ev))
+    html.find('.item-sellall').click((ev) => this._sellItem(ev, true))
 
     // Loot Item
     html.find('.item-loot').click((ev) => this._lootItem(ev))
-    html.find('.item-lootall').click((ev) => this._lootItem(ev, 1))
+    html.find('.item-lootall').click((ev) => this._lootItem(ev, true))
 
     // Loot Currency
     html
@@ -313,34 +328,34 @@ class LootSheet5eNPC extends dnd5e.applications.actor.ActorSheet5eNPC2 {
     // Sheet Type
     html.find('.sheet-type').change((ev) => this._changeSheetType(ev, html))
 
-    // Select the <nav> element and find all <a> elements inside it
-    const nav = $('.loot-sheet-npc nav.tabs')
-    const links = nav.find('a.item.control')
+    // // Select the <nav> element and find all <a> elements inside it
+    // const nav = $('.loot-sheet-npc nav.tabs')
+    // const links = nav.find('a.item.control')
 
     // Check if the first tab's data-tab attribute is not "features"
-    if (links.first().attr('data-tooltip') !== 'DND5E.Inventory') {
-      // Move the second <a> to the first position
-      if (links.eq(1).length) {
-        links.eq(1).insertBefore(links.eq(0)) // Move the second <a> before the first <a>
-      }
+    // if (links.first().attr('data-tooltip') !== 'DND5E.Inventory') {
+    //   // Move the second <a> to the first position
+    //   if (links.eq(1).length) {
+    //     links.eq(1).insertBefore(links.eq(0)) // Move the second <a> before the first <a>
+    //   }
 
-      // Move the fifth <a> to the second position
-      if (links.eq(4).length) {
-        links.eq(4).insertAfter(nav.find('a.item.control').first()) // Move the fifth <a> to after the new first <a>
-      }
+    //   // Move the fifth <a> to the second position
+    //   if (links.eq(4).length) {
+    //     links.eq(4).insertAfter(nav.find('a.item.control').first()) // Move the fifth <a> to after the new first <a>
+    //   }
 
-      // Remove the remaining <a> elements (original first, third, and fourth)
-      nav.find('a.item.control').slice(2).remove() // Remove from the third onward
+    //   // Remove the remaining <a> elements (original first, third, and fourth)
+    //   nav.find('a.item.control').slice(2).remove() // Remove from the third onward
 
-      // Set the data-tab attribute to features
-      nav.find('a.item.control').first().attr('data-tab', 'features')
+    //   // Set the data-tab attribute to features
+    //   nav.find('a.item.control').first().attr('data-tab', 'features')
 
-      // Check if no <li> elements have the 'active' class
-      if (!nav.find('a.active').length) {
-        // Add the "active" class to the new first <a> element if no other <li> is active
-        nav.find('a.item.control').first().addClass('active')
-      }
-    }
+    //   // Check if no <li> elements have the 'active' class
+    //   if (!nav.find('a.active').length) {
+    //     // Add the "active" class to the new first <a> element if no other <li> is active
+    //     nav.find('a.item.control').first().addClass('active')
+    //   }
+    // }
 
     // Roll Table
     //html.find('.sheet-type').change(ev => this._changeSheetType(ev, html));
@@ -618,7 +633,7 @@ class LootSheet5eNPC extends dnd5e.applications.actor.ActorSheet5eNPC2 {
    * Handle buy item
    * @private
    */
-  _buyItem(event, all = 0) {
+  _buyItem(event, all = false) {
     event.preventDefault()
     // console.log("Loot Sheet | Buy Item clicked");
 
@@ -685,11 +700,72 @@ class LootSheet5eNPC extends dnd5e.applications.actor.ActorSheet5eNPC2 {
   }
 
   /* -------------------------------------------- */
+
+  /**
+   * Handle sell items
+   * @private
+   */
+  _sellItem(event, all = false) {
+    event.preventDefault()
+
+    let targetGm = null
+    game.users.forEach((u) => {
+      if (u.isGM && u.active && u.viewedScene === game.user.viewedScene) {
+        targetGm = u
+      }
+    })
+
+    if (!targetGm) {
+      return ui.notifications.error(
+        'No active GM on your scene, they must be online and on the same scene to sell an item.',
+      )
+    }
+
+    if (this.token === null) {
+      return ui.notifications.error(`You must sell items from a token.`)
+    }
+    if (!game.user.character) {
+      return ui.notifications.error(`No active character for user.`)
+    }
+
+    const itemId = $(event.currentTarget).parents('.item').attr('data-item-id')
+    const targetItem = game.user.character.getEmbeddedDocument('Item', itemId)
+
+    const sellQuantity = (all || event.shiftKey) ? targetItem.system.quantity : 1
+
+    const packet = {
+      type: 'sell',
+      sellerId: game.user.character._id,
+      tokenId: this.token.id,
+      itemId: itemId,
+      quantity: sellQuantity,
+      processorId: targetGm.id,
+    }
+
+    if (targetItem.system.quantity === sellQuantity) {
+      console.log('LootSheet5e', 'Sending sell request to ' + targetGm.name, packet)
+      game.socket.emit(LootSheet5eNPC.SOCKET, packet)
+      return
+    }
+    const d = new QuantityDialog(
+      (quantity) => {
+        packet.quantity = quantity
+        console.log('LootSheet5e', 'Sending sell request to ' + targetGm.name, packet)
+        game.socket.emit(LootSheet5eNPC.SOCKET, packet)
+      },
+      {
+        acceptLabel: 'Sell',
+      },
+    )
+    d.render(true)
+  }
+
+  /* -------------------------------------------- */
   /**
    * Handle Loot item
    * @private
    */
-  _lootItem(event, all = 0) {
+  _lootItem(event, all = false) {
     event.preventDefault()
     // console.log("Loot Sheet | Loot Item clicked");
 
@@ -1203,6 +1279,22 @@ class LootSheet5eNPC extends dnd5e.applications.actor.ActorSheet5eNPC2 {
     let loot = {}
     loot.players = playerData
     context.flags.loot = loot
+  }
+
+  /**
+   * Retrieve an inventory for a given character similar to how the system organizes it
+   * @param {Actor5e} characterData
+   */
+  _inventoryForCharacter(characterData) {
+    const inventory = {};
+    const inventoryTypes = Object.entries(CONFIG.Item.dataModels)
+      .filter(([, model]) => model.metadata?.inventoryItem)
+      .sort(([, lhs], [, rhs]) => (lhs.metadata.inventoryOrder - rhs.metadata.inventoryOrder));
+    for ( const [type] of inventoryTypes ) {
+      inventory[type] = { label: `${CONFIG.Item.typeLabels[type]}Pl`, items: [], dataset: { type } };
+    }
+    characterData.items.forEach(i => inventory[i.type]?.items.push(i));
+    return inventory
   }
 }
 
@@ -1833,6 +1925,21 @@ Hooks.once('init', () => {
         } else if (!seller) {
           errorMessageToActor(
             buyer,
+            'GM not available, the GM must on the same scene to purchase an item.',
+          )
+          ui.notifications.error('Player attempted to purchase an item on a different scene.')
+        }
+      }
+
+      if(data.type === "sell") {
+        let seller = game.actors.get(data.sellerId)
+        let buyer = canvas.tokens.get(data.tokenId)
+
+        if (buyer && buyer.actor && seller) {
+          transaction(seller, buyer.actor, data.itemId, data.quantity)
+        } else if (!seller) {
+          errorMessageToActor(
+            seller,
             'GM not available, the GM must on the same scene to purchase an item.',
           )
           ui.notifications.error('Player attempted to purchase an item on a different scene.')
