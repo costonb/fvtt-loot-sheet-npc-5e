@@ -1022,8 +1022,8 @@ class LootSheet5eNPC extends dnd5e.applications.actor.ActorSheet5eNPC2 {
 
       // Remove currency from loot actor.
       let lootCurrency = LootSheet5eNPCHelper.convertCurrencyFromObject(
-          containerActor.system.currency,
-        ),
+        containerActor.system.currency,
+      ),
         zeroCurrency = {}
 
       for (let c in lootCurrency) {
@@ -1339,9 +1339,6 @@ Hooks.once('init', () => {
       let quantity = i.quantity
       let item = source.getEmbeddedDocument('Item', itemId)
 
-      // console.log("ITEM: \n");
-      // console.log(item);
-
       // Move all items if we select more than the quantity.
       if (item.system.quantity < quantity) {
         quantity = item.system.quantity
@@ -1371,7 +1368,17 @@ Hooks.once('init', () => {
           quantity: quantity,
         })
 
-        additions.push(newItem)
+        //Check if user has same item already
+        let destItem = destination.items.find(i => i.name == newItem.name);
+
+        //if they don't already have a stack then add it, otherwise update the quantity
+        if (destItem === undefined) {
+          additions.push(newItem);
+        } else {
+          let updateItem = duplicate(destItem);
+          updateItem.system.quantity = Number(destItem.system.quantity) + Number(newItem.system.quantity);
+          destUpdates.push(updateItem);
+        }
       }
     }
 
@@ -1736,8 +1743,8 @@ Hooks.once('init', () => {
 
       // Remove currency from loot actor.
       let lootCurrency = LootSheet5eNPCHelper.convertCurrencyFromObject(
-          containerActor.system.currency,
-        ),
+        containerActor.system.currency,
+      ),
         zeroCurrency = {}
 
       for (let c in lootCurrency) {
@@ -1795,8 +1802,8 @@ Hooks.once('init', () => {
 
     // Remove currency from loot actor.
     let lootCurrency = LootSheet5eNPCHelper.convertCurrencyFromObject(
-        containerActor.system.currency,
-      ),
+      containerActor.system.currency,
+    ),
       zeroCurrency = {}
     // console.log("lootCurrency", lootCurrency);
     for (let c in lootCurrency) {
