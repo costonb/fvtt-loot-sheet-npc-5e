@@ -418,15 +418,17 @@
 
                       {{!-- Item Quantity --}}
                       <div class="item-detail item-quantity">
-                         {{#notequal item.type "container"}}
-                        <a
-                          class="adjustment-button"
-                          data-action="decrease"
-                          data-property="system.quantity"
-                        >
-                          <i class="fas fa-minus"></i>
-                        </a>
-                        {{/notequal}} 
+                        {{#if @root.owner}}
+                          {{#notequal item.type "container"}}
+                            <a
+                              class="adjustment-button"
+                              data-action="decrease"
+                              data-property="system.quantity"
+                            >
+                              <i class="fas fa-minus"></i>
+                            </a>
+                          {{/notequal}} 
+                        {{/if}}
                         {{#notequal item.type "container"}}
                         <input
                           type="text"
@@ -441,15 +443,17 @@
                         {{else}}
                         <div class="item-detail">{{ item.system.quantity }}</div>
                         {{/notequal}}
-                        {{#notequal item.type "container"}}
-                        <a
-                          class="adjustment-button"
-                          data-action="increase"
-                          data-property="system.quantity"
-                        >
-                          <i class="fas fa-plus"></i>
-                        </a>
-                        {{/notequal}}
+                        {{#if @root.owner}}
+                          {{#notequal item.type "container"}}
+                            <a
+                              class="adjustment-button"
+                              data-action="increase"
+                              data-property="system.quantity"
+                            >
+                              <i class="fas fa-plus"></i>
+                            </a>
+                          {{/notequal}}
+                        {{/if}}
                       </div>
 
                       {{!-- Item Price --}}
