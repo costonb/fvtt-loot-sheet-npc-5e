@@ -294,16 +294,17 @@
         >
           <dnd5e-inventory class="inventory-element" v2="">
             <section class="currency {{@root.editable}}">
-              <button
-                type="button"
-                class="item-action unbutton"
-                data-action="currency"
-                data-tooltip="DND5E.CurrencyManager.Title"
-                aria-label="Manage Currency"
-              >
-                <i class="fas fa-coins"></i>
-              </button>
-
+              {{#if @root.owner}}
+                <button
+                  type="button"
+                  class="item-action unbutton"
+                  data-action="currency"
+                  data-tooltip="DND5E.CurrencyManager.Title"
+                  aria-label="Manage Currency"
+                >
+                  <i class="fas fa-coins"></i>
+                </button>
+              {{/if}}
               {{#each system.currency}}
               <label aria-label="{{ lookup (lookup @root.config.currencies @key) 'label' }}">
                 <i
@@ -321,6 +322,14 @@
                 />
               </label>
               {{/each}} {{#ifeq lootsheettype "Loot"}} {{#if lootCurrency}}
+              <button
+                type="button"
+                class="item-action unbutton split-coins"
+                data-tooltip="Split Coins"
+                aria-label="Split Coins"
+              >
+                <i class="fas fa-coins"></i>
+              </button>
               <button
                 type="button"
                 class="item-action unbutton currency-loot"
@@ -418,15 +427,17 @@
 
                       {{!-- Item Quantity --}}
                       <div class="item-detail item-quantity">
-                         {{#notequal item.type "container"}}
-                        <a
-                          class="adjustment-button"
-                          data-action="decrease"
-                          data-property="system.quantity"
-                        >
-                          <i class="fas fa-minus"></i>
-                        </a>
-                        {{/notequal}} 
+                        {{#if @root.owner}}
+                          {{#notequal item.type "container"}}
+                            <a
+                              class="adjustment-button"
+                              data-action="decrease"
+                              data-property="system.quantity"
+                            >
+                              <i class="fas fa-minus"></i>
+                            </a>
+                          {{/notequal}} 
+                        {{/if}}
                         {{#notequal item.type "container"}}
                         <input
                           type="text"
@@ -441,15 +452,17 @@
                         {{else}}
                         <div class="item-detail">{{ item.system.quantity }}</div>
                         {{/notequal}}
-                        {{#notequal item.type "container"}}
-                        <a
-                          class="adjustment-button"
-                          data-action="increase"
-                          data-property="system.quantity"
-                        >
-                          <i class="fas fa-plus"></i>
-                        </a>
-                        {{/notequal}}
+                        {{#if @root.owner}}
+                          {{#notequal item.type "container"}}
+                            <a
+                              class="adjustment-button"
+                              data-action="increase"
+                              data-property="system.quantity"
+                            >
+                              <i class="fas fa-plus"></i>
+                            </a>
+                          {{/notequal}}
+                        {{/if}}
                       </div>
 
                       {{!-- Item Price --}}
